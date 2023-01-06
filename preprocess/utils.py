@@ -179,7 +179,7 @@ def download_model(model_dir, url):
 def upload(bucketName, remotePath, file):
     if osp.isfile(file):
         try:
-            s3.fput_object(bucketName, remotePath, file )
+            s3.fput_object(bucketName, remotePath, file)
             return True
         except:
             logger.exception("message")

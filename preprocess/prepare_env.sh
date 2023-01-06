@@ -3,6 +3,12 @@
 root_path='/notebooks'
 repo_name='kohya-trainer-paperspace'
 
+if [ ! -d $root_path/$repo_name ]; then
+    # clone repo if not exist
+    cd $root_path
+    git clone https://github.com/sheldonchiu/kohya-trainer-paperspace.git
+fi
+
 cd $root_path/$repo_name
 
 echo "Installing Dependencies"
