@@ -39,4 +39,3 @@ vae_model_hub_2 = os.environ.get("VAE_MODEL_HUB_2","stabilityai/stable-diffusion
 s3_endpoint_url = os.environ['S3_HOST_URL']
 s3_aws_access_key_id = os.environ['S3_ACCESS_KEY']
 s3_aws_secret_access_key = os.environ['S3_SECRET_KEY']
-s3_region_name= os.environ['S3_REGION']
