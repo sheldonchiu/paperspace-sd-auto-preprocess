@@ -7,6 +7,7 @@ from glob import glob
 import argparse
 import settings
 import logging
+from discord_logging.handler import DiscordHandler
 import gzip, tarfile
 import shutil
 from tqdm.auto import tqdm
@@ -266,3 +267,21 @@ def test_tag_extension(target_dir, tag_extension, tag_extension2):
     else:
         return None
     
+def setup_logger(logger):
+    # Silence requests and discord_webhook internals as otherwise this example will be too noisy
+    logging.getLogger("requests").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("discord_webhook").setLevel(logging.FATAL)  # discord_webhook.webhook - ERROR - Webhook rate limited: sleeping for 0.235 seconds...
+    
+    stream_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    discord_format = logging.Formatter("%(message)s")
+    
+    discord_handler = DiscordHandler("Paperspace preprocess", settings.discord_webhook_url)
+    discord_handler.setFormatter(discord_format)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(stream_format)
+
+    # Add the handlers to the Logger
+    logger.addHandler(discord_handler)
+    logger.addHandler(stream_handler)
+    logger.setLevel(logging.INFO)

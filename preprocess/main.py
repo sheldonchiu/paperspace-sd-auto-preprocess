@@ -1,28 +1,26 @@
-import logging
 import os
 import sys
 import os.path as osp
 
+# will add path to kohya trainer in settings
+import logging
+from utils import *
+logger = logging.getLogger()
+setup_logger(logger)
+
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import active_children
-import file_filter
-
 import signal
-import sys
-
-# will add path to kohya trainer in settings
 import settings
-from utils import *
-        
+
+import file_filter
 import make_captions
 import tag_images_by_wd14_tagger
 import merge_dd_tags_to_metadata
 import merge_captions_to_metadata
 import clean_captions_and_tags
 import prepare_buckets_latents
-
-logging.basicConfig(level=logging.DEBUG, filename='run.log')
 
 def sigterm_handler(_signo, _stack_frame):
     # Raises SystemExit(0):
@@ -34,7 +32,7 @@ def sigterm_handler(_signo, _stack_frame):
     
 def main():
     if not settings.use_original_tags and not settings.tag_using_wd14:
-        logging.error("cannot disable wd14 tagger and not use original tags")
+        logger.error("cannot disable wd14 tagger and not use original tags")
         sys.exit(-1)
         
     signal.signal(signal.SIGTERM, sigterm_handler)
@@ -66,36 +64,36 @@ def main():
                     
                 if settings.tag_using_wd14:
                     # create tag using wd14 and storing with .tag extension in the same directory
-                    logging.info(f"Start tagging for {file}")
+                    logger.info(f"Start tagging for {file}")
                     wd_args = prepare_wd_parser(target_dir, batch_size=settings.wd14_batch_size, caption_extention=tag_extension)
                     task = context.Process(target=tag_images_by_wd14_tagger.main, args=(wd_args,))
                     task.start()
                     task.join()
-                    logging.info(f"Finish tagging for {file}")
+                    logger.info(f"Finish tagging for {file}")
                     
                 if settings.caption_using_blip:
-                    logging.info(f"Start captioning for {file}")
+                    logger.info(f"Start captioning for {file}")
                     blip_args = prepare_caption_parser(target_dir, batch_size=settings.blip_batch_size, caption_extention=caption_extension)
                     task = context.Process(target=make_captions.main, args=(blip_args,))
                     task.start()
                     task.join()
-                    logging.info(f"Finish captioning for {file}")
+                    logger.info(f"Finish captioning for {file}")
                 
                 if settings.enable_filter:
                     # use tag created by wd14 and filter, save symbolic links in folder {train_dir}_filter
-                    logging.info(f"Start filter for {file}")
+                    logger.info(f"Start filter for {file}")
                     # since data dir has changed, need to update target_dir
                     task = context.Process(target=file_filter.main, args=(target_dir, filter_dst,tag_extension, caption_extension, settings.filter_using_cafe_aesthetic,debug_dir))
                     task.start()
                     task.join()
-                    logging.info(f"Finish filter for {file}")
+                    logger.info(f"Finish filter for {file}")
                 
-                logging.info(f"Start metadata merging for {file}")
+                logger.info(f"Start metadata merging for {file}")
                 meta_file = osp.join(filter_dst,'meta_cap_dd.json')
                 if settings.use_original_tags:
                     merge_tag_extension = test_tag_extension(filter_dst, '.txt', tag_extension)
                     if merge_tag_extension is None:
-                        logging.error("No tag file in source directory, unknow issue")
+                        logger.error("No tag file in source directory, unknow issue")
                         raise Exception
                 else:
                     merge_tag_extension = tag_extension
@@ -104,14 +102,14 @@ def main():
                 if settings.caption_using_blip:
                     merge_arg = prepare_merge_parser(filter_dst, meta_file, caption_extension)
                     merge_captions_to_metadata.main(merge_arg)
-                logging.info(f"Finish metadata merging for {file}")
+                logger.info(f"Finish metadata merging for {file}")
                 
-                logging.info(f"Start cleaning metadata for {file}")
+                logger.info(f"Start cleaning metadata for {file}")
                 clean_args = prepare_clean_parser(meta_file,meta_file)
                 clean_captions_and_tags.main(clean_args)
-                logging.info(f"Finish cleaning metadata for {file}")
+                logger.info(f"Finish cleaning metadata for {file}")
                 
-                logging.info(f"Start bucketing for {file}")
+                logger.info(f"Start bucketing for {file}")
                 lat_file = osp.join(filter_dst,'meta_lat.json')
                 if settings.vae_model_url:
                     sd_model_path = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url)
@@ -131,7 +129,7 @@ def main():
                 task = context.Process(target=prepare_buckets_latents.main, args=(bucket_args,))
                 task.start()
                 task.join()
-                logging.info(f"Finish bucketing for {file}")
+                logger.info(f"Finish bucketing for {file}")
                 
                 folders_to_compress = [filter_dst]
                 if debug_dir:
@@ -141,7 +139,7 @@ def main():
                 uploader.submit(compress_and_upload, folders_to_compress, output_path, bucket_name)
                     
             except:
-                logging.exception(f"Failed to process {file}")
+                logger.exception(f"Failed to process {file}")
         
     downloader.shutdown(wait=True)
     
