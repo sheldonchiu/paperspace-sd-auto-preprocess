@@ -22,8 +22,6 @@ search_exclude_pairs = [
     (None, ['sensitive', 'explicit'])
 ]
 hashList = []
-final_output = []
-output = []
 count = 0
 
 def imgFilter(tag):
@@ -60,6 +58,7 @@ def image_generator(imgs):
         yield Image.open(img)
 
 def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe_aesthetic=False, debug_dir=None):
+
     if osp.isdir(dst_path):
         shutil.rmtree(dst_path)
     os.makedirs(dst_path,exist_ok=True)
@@ -72,6 +71,7 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
     logger.info(f"find {len(imgList)} image file")
     
     # simple filter
+    output = []
     for idx, imgFile in tqdm(enumerate(imgList), desc="filter"):
         try:
             id = osp.splitext(osp.basename(imgFile))[0]
@@ -91,6 +91,7 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
             logger.info(f"Failed to process image {imgFile}")
             
     if filter_using_cafe_aesthetic:
+        final_output = []
         logger.info("Calculating aesthetics...")
         dataset = load_dataset("imagefolder", data_files = [i['img_src'] for i in output])
         scores = scorer.calculate_aesthetic_score(dataset['train'])
@@ -106,6 +107,8 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
                     or score['not_waifu'] < settings.filter_waifu_thresh:
                         continue
             final_output.append(item)
+    else:
+        final_output = output
     
     for idx, item in enumerate(final_output):
         imgFile = item['img_src']
