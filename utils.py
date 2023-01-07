@@ -39,3 +39,7 @@ def find_available_gpu():
 
 def get_notebook_detail(notebook_id):
     return notebooks_client.get(id=notebook_id)
+
+def get_notobooks_by_project_id(project_id):
+    notebooks = [n for n in notebooks_client.list(tags=[]) if n.project_handle==project_id]
+    return notebooks

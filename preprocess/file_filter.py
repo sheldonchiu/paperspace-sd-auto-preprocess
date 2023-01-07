@@ -11,6 +11,9 @@ from PIL import Image
 import settings
 import json
 from datasets import load_dataset
+import logging
+logger = logging.getLogger(__name__)
+
 image_format = ['jpeg','jpg', 'png', 'webp']
 
 #%%
@@ -19,6 +22,7 @@ search_exclude_pairs = [
     (None, ['sensitive', 'explicit'])
 ]
 hashList = []
+final_output = []
 output = []
 count = 0
 
@@ -65,20 +69,9 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         scorer = Aesthetic(batch_size=settings.cafe_batch_size)
     
     imgList = list(chain(*[glob(os.path.join(src_path, f"*.{f}")) for f in image_format]))
-    print(f"find {len(imgList)} image file")
+    logger.info(f"find {len(imgList)} image file")
     
-    if filter_using_cafe_aesthetic:
-        # batch_split = settings.cafe_batch_size
-        # scores = []
-        dataset = load_dataset("imagefolder", data_files =imgList)
-        scores = scorer.calculate_aesthetic_score(dataset['train'])
-        # for i in tqdm(range(len(imgList)//batch_split + 1), desc="Calculating aesthetic"):
-        #     start_id = i * batch_split
-        #     end_id = (i+1) * batch_split if (i+1) * batch_split < len(imgList) else None
-        #     imgs = [Image.open(i) for i in imgList[start_id:end_id]]
-        #     scores += scorer.calculate_aesthetic_score(imgs)
-        print(f"Finish calculating aesthetic")
-        
+    # simple filter
     for idx, imgFile in tqdm(enumerate(imgList), desc="filter"):
         try:
             id = osp.splitext(osp.basename(imgFile))[0]
@@ -88,17 +81,6 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
             with open(tagFile,'r') as f:
                 tags = f.read()
             if imgFilter(tags):
-                if filter_using_cafe_aesthetic:
-                    score = scores[idx]
-                    if debug_dir:
-                        debug_file = osp.join(debug_dir, f"{osp.basename(imgFile)}_aesthetic.json")
-                        with open(debug_file, 'w') as f:
-                            json.dump(score, f, indent=4)
-                    if score['aesthetic'] < settings.filter_aesthetic_thresh \
-                        or score['anime'] < settings.filter_anime_thresh \
-                            or score['not_waifu'] < settings.filter_waifu_thresh:
-                                continue
-                    
                 output.append({ 'img_src': imgFile, 
                                  'tag_ori': tagOri,
                                 'tag_src': tagFile,
@@ -106,9 +88,26 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
                                 'id':  id,
                             })
         except:
-            print(f"Failed to process image {imgFile}")
+            logger.info(f"Failed to process image {imgFile}")
             
-    for idx, item in enumerate(output):
+    if filter_using_cafe_aesthetic:
+        logger.info("Calculating aesthetics...")
+        dataset = load_dataset("imagefolder", data_files = [i['img_src'] for i in output])
+        scores = scorer.calculate_aesthetic_score(dataset['train'])
+        logger.info(f"Finish calculating aesthetic")
+        for idx, item in enumerate(output):
+            score = scores[idx]
+            if debug_dir:
+                debug_file = osp.join(debug_dir, f"{osp.basename(imgFile)}_aesthetic.json")
+                with open(debug_file, 'w') as f:
+                    json.dump(score, f, indent=4)
+            if score['aesthetic'] < settings.filter_aesthetic_thresh \
+                or score['anime'] < settings.filter_anime_thresh \
+                    or score['not_waifu'] < settings.filter_waifu_thresh:
+                        continue
+            final_output.append(item)
+    
+    for idx, item in enumerate(final_output):
         imgFile = item['img_src']
         img_dst = osp.join(dst_path, osp.basename(imgFile))
         tag_dst = osp.join(dst_path, f"{item['id']}{tag_extension}")
