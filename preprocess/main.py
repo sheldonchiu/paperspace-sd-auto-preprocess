@@ -13,6 +13,7 @@ from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import active_children
 import signal
 import settings
+import importlib
 
 import file_filter
 import make_captions
@@ -56,6 +57,11 @@ def main():
         local_path = osp.join(settings.data_download_path, osp.basename(file))
         if next(results) and (target_dir := extract(local_path)):
             try:
+                # reload setting to clean previous custom settings
+                importlib.reload(settings)
+                # load custom settings from config file in job zip
+                load_config_from_file(osp.join(target_dir, "config.json"))
+                
                 filter_dst = f"{target_dir}_filter" if settings.enable_filter else target_dir
                 debug_dir = f"{target_dir}_debug" if settings.save_img_for_debug else None
                 

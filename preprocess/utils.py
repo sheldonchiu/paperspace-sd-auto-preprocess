@@ -13,6 +13,7 @@ import shutil
 from tqdm.auto import tqdm
 import time
 from pathlib import Path
+import json
 
 import re
 logger = logging.getLogger(__name__)
@@ -150,7 +151,7 @@ def prepare_bucket_parser(train_data_dir, in_json, out_json,
                         default=10, help='Tile padding')
     parser.add_argument('--upscale_pre_pad', type=int,
                         default=0, help='Pre padding size at each border')
-    parser.add_argument("--upscale_enable_reso", type=int, default=1000*1000,
+    parser.add_argument("--upscale_enable_reso", type=int, default=1500*1500,
                         help="Images with resolution(w*h) below this will upscale before resize, if upsacle is enabled")
     parser.add_argument(
         '--debug_dir', type=str, default=None, help='')
@@ -285,3 +286,15 @@ def setup_logger(logger):
     logger.addHandler(discord_handler)
     logger.addHandler(stream_handler)
     logger.setLevel(logging.INFO)
+    
+def load_config_from_file(file_path):
+    with open(file_path, 'r') as f:
+        config = json.load(f)
+    for key, value in config.items():
+        value = re.sub(r'[^\w]', '', value)
+        exec(f"settings.{key}={value}")
+        
+        
+# config = {"use_original_tags": "0"}
+# with open("config.json", 'w') as f:
+#     json.dump(config, f)

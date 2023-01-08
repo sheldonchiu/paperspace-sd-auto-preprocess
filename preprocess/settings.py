@@ -3,7 +3,8 @@ import os
 from os import path as osp
 
 path_to_repo = "/notebooks/kohya-trainer-paperspace"
-sys.path.append(osp.join(path_to_repo,'finetune'))
+if osp.join(path_to_repo,'finetune') not in sys.path:
+    sys.path.append(osp.join(path_to_repo,'finetune'))
 
 data_download_path = '/tmp/data/'
 model_path = '/tmp'

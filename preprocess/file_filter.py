@@ -51,12 +51,14 @@ def imgFilter(tag):
     # If none of the search conditions are met, return False
     return include
 
+def add_custom_tag(tag_file, custom_tags):
+    with open(tag_file,'r') as f:
+        tags = f.read()
+    words = [t.strip() for t in tags.split(',')]
+    words += [t.strip() for t in custom_tags.split(',') if t.strip() != ""]
+    with open(tag_file,'w') as f:
+        f.write(','.join(words))
 #%%
-
-def image_generator(imgs):
-    for img in imgs:
-        yield Image.open(img)
-
 def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe_aesthetic=False, debug_dir=None):
 
     if osp.isdir(dst_path):
@@ -111,6 +113,8 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         final_output = output
     
     for idx, item in enumerate(final_output):
+        if hasattr(settings, "custom_tags"):
+            add_custom_tag(item['tag_src'], settings.custom_tags)
         imgFile = item['img_src']
         img_dst = osp.join(dst_path, osp.basename(imgFile))
         tag_dst = osp.join(dst_path, f"{item['id']}{tag_extension}")
