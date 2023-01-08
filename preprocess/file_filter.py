@@ -122,7 +122,8 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         caption_dst = osp.join(dst_path, f"{item['id']}{caption_extension}")
         os.symlink(imgFile, img_dst)
         os.symlink(item['tag_src'], tag_dst)
-        os.symlink(item['tag_ori'], tag_ori_dst)
+        if settings.use_original_tags:
+            os.symlink(item['tag_ori'], tag_ori_dst)
         os.symlink(item['caption_src'], caption_dst)
     
 
