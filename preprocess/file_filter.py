@@ -74,7 +74,7 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
     
     # simple filter
     output = []
-    debug_output = {}
+    debug_output = []
     for idx, imgFile in tqdm(enumerate(imgList), desc="filter"):
         try:
             id = osp.splitext(osp.basename(imgFile))[0]
@@ -91,7 +91,12 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
                                 'id':  id,
                             })
             elif debug_dir:
-                debug_output[id] = f"Reason: tag filter; Tags: {tags}"
+                debug_output.append({
+                                'img_src': imgFile,
+                                'id': id,
+                                'reason': "tag",
+                                'tags': tags
+                            })
         except:
             logger.info(f"Failed to process image {imgFile}")
             debug_output[id] = f"Reason: Unknow error;"
@@ -108,7 +113,12 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
                 or score['anime'] < settings.filter_anime_thresh \
                     or score['not_waifu'] < settings.filter_waifu_thresh:
                         if debug_dir:
-                            debug_output[item['id']] = f"Reason: aesthetic filter; Scores: {score}"
+                            debug_output.append({
+                                            'img_src': item['img_src'],
+                                            'id': item['id'],
+                                            'reason': "aesthetic",
+                                            'score': score
+                                        })
                         continue
             final_output.append(item)
     else:
@@ -129,8 +139,12 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         os.symlink(item['caption_src'], caption_dst)
         
     if debug_dir:
-        with open(osp.join(debug_dir, 'filtered_list.json'), 'w') as f:
-            json.dump(debug_output, f)
+        for item in debug_output:
+            imgFile = item['img_src']
+            img_dst = osp.join(debug_dir, osp.basename(imgFile))
+            os.symlink(imgFile, img_dst)
+            with open(osp.join(debug_dir, f"{item['id']}.json"), 'w') as f:
+                json.dump(item, f, indent=4)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
