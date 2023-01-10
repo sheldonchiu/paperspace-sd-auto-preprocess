@@ -141,9 +141,9 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
     if debug_dir:
         for item in debug_output:
             imgFile = item['img_src']
-            img_dst = osp.join(debug_dir, osp.basename(imgFile))
+            img_dst = osp.join(debug_dir, "filter", osp.basename(imgFile))
             os.symlink(imgFile, img_dst)
-            with open(osp.join(debug_dir, f"{item['id']}.json"), 'w') as f:
+            with open(osp.join(debug_dir, "filter", f"{item['id']}.json"), 'w') as f:
                 json.dump(item, f, indent=4)
 
 if __name__ == "__main__":
@@ -154,3 +154,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     main(args.src,args.dst,args.tag_extension)
     
+
+# %%
