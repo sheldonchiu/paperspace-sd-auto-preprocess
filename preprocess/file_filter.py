@@ -74,6 +74,7 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
     
     # simple filter
     output = []
+    debug_output = {}
     for idx, imgFile in tqdm(enumerate(imgList), desc="filter"):
         try:
             id = osp.splitext(osp.basename(imgFile))[0]
@@ -89,8 +90,11 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
                                 'caption_src': caption_src,
                                 'id':  id,
                             })
+            elif debug_dir:
+                debug_output[id] = f"Reason: tag filter; Tags: {tags}"
         except:
             logger.info(f"Failed to process image {imgFile}")
+            debug_output[id] = f"Reason: Unknow error;"
             
     if filter_using_cafe_aesthetic:
         final_output = []
@@ -100,13 +104,11 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         logger.info(f"Finish calculating aesthetic")
         for idx, item in enumerate(output):
             score = scores[idx]
-            if debug_dir:
-                debug_file = osp.join(debug_dir, f"{osp.basename(imgFile)}_aesthetic.json")
-                with open(debug_file, 'w') as f:
-                    json.dump(score, f, indent=4)
             if score['aesthetic'] < settings.filter_aesthetic_thresh \
                 or score['anime'] < settings.filter_anime_thresh \
                     or score['not_waifu'] < settings.filter_waifu_thresh:
+                        if debug_dir:
+                            debug_output[item['id']] = f"Reason: aesthetic filter; Scores: {score}"
                         continue
             final_output.append(item)
     else:
@@ -125,7 +127,10 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         if settings.use_original_tags:
             os.symlink(item['tag_ori'], tag_ori_dst)
         os.symlink(item['caption_src'], caption_dst)
-    
+        
+    if debug_dir:
+        with open(osp.join(debug_dir, 'filtered_list.json'), 'w') as f:
+            json.dump(debug_output, f)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
