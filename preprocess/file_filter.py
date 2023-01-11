@@ -139,6 +139,7 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         os.symlink(item['caption_src'], caption_dst)
         
     if debug_dir:
+        os.makedirs(osp.join(debug_dir, "filter"), exist_ok=True)
         for item in debug_output:
             imgFile = item['img_src']
             img_dst = osp.join(debug_dir, "filter", osp.basename(imgFile))
