@@ -21,6 +21,9 @@ search_exclude_pairs = [
     (['mecha', 'robot'], ['girl', 'boy']),
     (None, ['sensitive', 'explicit'])
 ]
+quality = ["worst quality"] * 21 + ["low quality"] * 30 + \
+    ["medium quality"] * 20 + ["high quality"] * 10 + \
+    ["best quality"] * 10 + ["masterpiece"] * 10
 hashList = []
 count = 0
 
@@ -109,9 +112,9 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         logger.info(f"Finish calculating aesthetic")
         for idx, item in enumerate(output):
             score = scores[idx]
-            if score['aesthetic'] < settings.filter_aesthetic_thresh \
-                or score['anime'] < settings.filter_anime_thresh \
+            if score['anime'] < settings.filter_anime_thresh \
                     or score['not_waifu'] < settings.filter_waifu_thresh:
+                        add_custom_tag(item['tag_src'], quality[int(score['aesthetic'] * 100)])
                         if debug_dir:
                             debug_output.append({
                                             'img_src': item['img_src'],
