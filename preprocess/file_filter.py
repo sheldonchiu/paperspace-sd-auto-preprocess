@@ -114,7 +114,6 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
             score = scores[idx]
             if score['anime'] < settings.filter_anime_thresh \
                     or score['not_waifu'] < settings.filter_waifu_thresh:
-                        add_custom_tag(item['tag_src'], quality[int(score['aesthetic'] * 100)])
                         if debug_dir:
                             debug_output.append({
                                             'img_src': item['img_src'],
@@ -123,6 +122,7 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
                                             'score': score
                                         })
                         continue
+            add_custom_tag(item['tag_src'], quality[int(score['aesthetic'] * 100)])
             final_output.append(item)
     else:
         final_output = output
