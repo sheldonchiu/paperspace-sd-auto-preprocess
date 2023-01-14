@@ -11,9 +11,9 @@ class Aesthetic():
     
     def __init__(self, batch_size=3):
         pipe_aesthetic = pipeline("image-classification", "cafeai/cafe_aesthetic", device=device, batch_size=batch_size)
-        spipe_style = pipeline("image-classification", "cafeai/cafe_style", device=device, batch_size=batch_size)
+        pipe_style = pipeline("image-classification", "cafeai/cafe_style", device=device, batch_size=batch_size)
         pipe_waifu = pipeline("image-classification", "cafeai/cafe_waifu", device=device, batch_size=batch_size)
-        self.pipes = [pipe_aesthetic, spipe_style, pipe_waifu]
+        self.pipes = [pipe_aesthetic, pipe_style, pipe_waifu]
         
     def calculate_aesthetic_score(self, images):
         results = {}
