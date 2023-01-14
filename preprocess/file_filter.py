@@ -18,7 +18,7 @@ image_format = ['jpeg','jpg', 'png', 'webp']
 
 #%%
 search_exclude_pairs = [
-    (['mecha', 'robot'], ['girl', 'boy']),
+    (['mecha', 'robot', 'mecha_musume'], ['girl', 'boy']),
     (None, ['sensitive', 'explicit'])
 ]
 quality = ["worst quality"] * 21 + ["low quality"] * 30 + \
@@ -70,7 +70,7 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
     
     if filter_using_cafe_aesthetic:
         from cafe_filter import Aesthetic
-        scorer = Aesthetic(batch_size=settings.cafe_batch_size)
+        scorer = Aesthetic(batch_size=settings.cafe_batch_size, aesthetic=True)
     
     imgList = list(chain(*[glob(os.path.join(src_path, f"*.{f}")) for f in image_format]))
     logger.info(f"find {len(imgList)} image file")
@@ -112,16 +112,16 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         logger.info(f"Finish calculating aesthetic")
         for idx, item in enumerate(output):
             score = scores[idx]
-            if score['anime'] < settings.filter_anime_thresh \
-                    or score['not_waifu'] < settings.filter_waifu_thresh:
-                        if debug_dir:
-                            debug_output.append({
-                                            'img_src': item['img_src'],
-                                            'id': item['id'],
-                                            'reason': "aesthetic",
-                                            'score': score
-                                        })
-                        continue
+            # if score['anime'] < settings.filter_anime_thresh \
+                    # or score['not_waifu'] < settings.filter_waifu_thresh:
+                    #     if debug_dir:
+                    #         debug_output.append({
+                    #                         'img_src': item['img_src'],
+                    #                         'id': item['id'],
+                    #                         'reason': "aesthetic",
+                    #                         'score': score
+                    #                     })
+                    #     continue
             add_custom_tag(item['tag_src'], quality[int(score['aesthetic'] * 100)])
             final_output.append(item)
     else:

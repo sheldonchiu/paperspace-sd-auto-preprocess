@@ -9,11 +9,14 @@ device = 0
 
 class Aesthetic():
     
-    def __init__(self, batch_size=3):
-        pipe_aesthetic = pipeline("image-classification", "cafeai/cafe_aesthetic", device=device, batch_size=batch_size)
-        pipe_style = pipeline("image-classification", "cafeai/cafe_style", device=device, batch_size=batch_size)
-        pipe_waifu = pipeline("image-classification", "cafeai/cafe_waifu", device=device, batch_size=batch_size)
-        self.pipes = [pipe_aesthetic, pipe_style, pipe_waifu]
+    def __init__(self, batch_size=3, aesthetic=False, style=False, waifu=False):
+        self.pipes = []
+        if aesthetic:
+            self.pipes.append(pipeline("image-classification", "cafeai/cafe_aesthetic", device=device, batch_size=batch_size))
+        if style:
+            self.pipes.append(pipeline("image-classification", "cafeai/cafe_style", device=device, batch_size=batch_size))
+        if waifu:
+            self.pipes.append(pipeline("image-classification", "cafeai/cafe_waifu", device=device, batch_size=batch_size))
         
     def calculate_aesthetic_score(self, images):
         results = {}
