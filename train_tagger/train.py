@@ -11,14 +11,7 @@ from torch import nn
 import itertools
 from sklearn.utils import class_weight
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
-from torchvision.transforms import (CenterCrop, 
-                                    Compose, 
-                                    Normalize, 
-                                    RandomHorizontalFlip,
-                                    RandomResizedCrop, 
-                                    ColorJitter,
-                                    Resize, 
-                                    ToTensor)
+
 from transformers import (
     AutoConfig,
     AutoFeatureExtractor,
@@ -28,8 +21,16 @@ from transformers import (
     set_seed,
     EvalPrediction,
 )
-
 from transformers.trainer_utils import get_last_checkpoint
+
+from torchvision.transforms import (CenterCrop, 
+                                    Compose, 
+                                    Normalize, 
+                                    RandomHorizontalFlip,
+                                    RandomResizedCrop, 
+                                    ColorJitter,
+                                    Resize, 
+                                    ToTensor)
 
 import logging
 logger = logging.getLogger(__name__)
