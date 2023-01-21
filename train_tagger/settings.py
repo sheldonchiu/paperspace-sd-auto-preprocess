@@ -37,6 +37,7 @@ hub_id = os.environ.get('HUB_ID', None)
 s3_endpoint_url = os.environ['S3_HOST_URL']
 s3_aws_access_key_id = os.environ['S3_ACCESS_KEY']
 s3_aws_secret_access_key = os.environ['S3_SECRET_KEY']
+hf_token = os.environ['HF_TOKEN']
 path_to_s3_data = os.environ['PATH_TO_S3_DATA']
 bucket_name = os.environ['S3_BUCKET_NAME']
 

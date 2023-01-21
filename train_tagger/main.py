@@ -18,6 +18,8 @@ def main():
     bucket_name = settings.bucket_name
     local_data_path = osp.join(settings.data_download_path, path_to_s3_data)
     
+    hf_login(settings.hf_token)
+    
     s3_download(bucket_name, path_to_s3_data)
     extract(local_data_path)
     
