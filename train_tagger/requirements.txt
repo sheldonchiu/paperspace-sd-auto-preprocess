@@ -1,5 +1,8 @@
 wandb
 huggingface-hub
+torch==1.13.1
 transformers>=4.25.1
 datasets 
 scikit-learn
+python-logging-discord-handler
+minio

@@ -6,7 +6,7 @@ import os.path as osp
 # will add path to kohya trainer in settings
 import logging
 
-from ..preprocess.utils import *
+from utils import *
 from huggingface_utils import *
 logger = logging.getLogger()
 setup_logger(logger)
@@ -20,7 +20,9 @@ def main():
     
     hf_login(settings.hf_token)
     
-    s3_download(bucket_name, path_to_s3_data)
+    if not osp.isfile(local_data_path):
+        s3_download(bucket_name, path_to_s3_data, local_data_path)
+    
     extract(local_data_path)
     
     # clone repo to resume if repo has been created
@@ -58,6 +60,8 @@ def main():
     upload(settings.bucket_name, osp.basename(file_to_mark_complete), file_to_mark_complete)
     
     
+if __name__ == "__main__":
+    main()
     
     
     
