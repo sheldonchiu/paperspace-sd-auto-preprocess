@@ -198,7 +198,17 @@ def check_work_queue():
             files_to_process.append(f)
     return len(files_to_process)
 
-def download(data):
+def s3_download(bucketName, remotePath, localPath):
+    try:
+        logger.info(f"Downloading {remotePath}")
+        s3.fget_object(bucketName, remotePath, localPath)
+        logger.info(f"Finish Downloading {remotePath}")
+        return True
+    except:
+        logger.exception("message")
+        return False
+
+def download_with_queue(data):
     bucketName, remotePath, localPath = data
     if settings.skip_download or osp.isfile(localPath):
         return True
@@ -209,14 +219,7 @@ def download(data):
             time.sleep(120)
         else:
             break
-    try:
-        logger.info(f"Downloading {remotePath}")
-        s3.fget_object(bucketName, remotePath, localPath)
-        logger.info(f"Finish Downloading {remotePath}")
-        return True
-    except:
-        logger.exception("message")
-        return False
+    s3_download(bucketName, remotePath, localPath)
     
 def get_list_of_files(bucketName):
     try:

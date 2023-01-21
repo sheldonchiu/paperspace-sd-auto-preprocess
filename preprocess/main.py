@@ -52,7 +52,7 @@ def main():
         if 'result' not in f and f'{filename}-result.tar.gz' not in files:
             files_to_process.append(f)
             
-    results = downloader.map(download, [(bucket_name, f, osp.join(settings.data_download_path, osp.basename(f))) for f in files_to_process])
+    results = downloader.map(download_with_queue, [(bucket_name, f, osp.join(settings.data_download_path, osp.basename(f))) for f in files_to_process])
     for file in files_to_process:
         local_path = osp.join(settings.data_download_path, osp.basename(file))
         if next(results) and (target_dir := extract(local_path)):
