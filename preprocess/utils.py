@@ -219,7 +219,7 @@ def download_with_queue(data):
             time.sleep(120)
         else:
             break
-    s3_download(bucketName, remotePath, localPath)
+    return s3_download(bucketName, remotePath, localPath)
     
 def get_list_of_files(bucketName):
     try:
