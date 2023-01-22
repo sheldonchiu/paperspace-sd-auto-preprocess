@@ -45,7 +45,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class SquarePad:
     def __call__(self, image):
-        s = image.size()
+        s = image.size
         max_wh = np.max(s[-1], s[-2])
         hp = int((max_wh - s[-1]) / 2)
         vp = int((max_wh - s[-2]) / 2)
@@ -129,8 +129,9 @@ def main(model_checkpoint, class_file, data_dir,
     )
     _val_transforms = Compose(
         [
+            SquarePad(),
             Resize(size),
-            CenterCrop(size),
+            # CenterCrop(size),
             ToTensor(),
             normalize,
         ]
@@ -192,6 +193,7 @@ def main(model_checkpoint, class_file, data_dir,
         metric_for_best_model=eval_metric,
         logging_dir='/tf_logs',
         remove_unused_columns=False,
+        label_smoothing_factor=0.1,
         report_to=log_to,
         optim="adamw_torch",
         logging_steps = 100,
