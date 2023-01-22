@@ -7,6 +7,7 @@ import os
 import numpy as np
 from datasets import load_dataset 
 import torch
+torch.backends.cuda.matmul.allow_tf32 = True
 from torch import nn
 import itertools
 from sklearn.utils import class_weight
@@ -204,7 +205,6 @@ def main(model_checkpoint, class_file, data_dir,
         push_to_hub= hub_id is not None,
         hub_model_id=hub_id,
         hub_strategy="checkpoint",
-        tf32=True,
     )
      
     # Detecting last checkpoint.
