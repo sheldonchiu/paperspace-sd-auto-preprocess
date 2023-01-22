@@ -22,7 +22,6 @@ from transformers import (
     EvalPrediction,
 )
 from transformers.trainer_utils import get_last_checkpoint
-
 from torchvision.transforms import (CenterCrop, 
                                     Compose, 
                                     Normalize, 
@@ -31,7 +30,7 @@ from torchvision.transforms import (CenterCrop,
                                     ColorJitter,
                                     Resize, 
                                     ToTensor)
-
+import torchvision.transforms.functional as F
 import logging
 logger = logging.getLogger(__name__)
 
@@ -43,6 +42,15 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # max_eval_samples = None
 # seed = 42
 # cache_dir = None
+
+class SquarePad:
+    def __call__(self, image):
+        s = image.size()
+        max_wh = np.max(s[-1], s[-2])
+        hp = int((max_wh - s[-1]) / 2)
+        vp = int((max_wh - s[-2]) / 2)
+        padding = (hp, vp, hp, vp)
+        return F.pad(image, padding, 0, 'constant')
 
 #%%
 def main(model_checkpoint, class_file, data_dir,
@@ -110,9 +118,10 @@ def main(model_checkpoint, class_file, data_dir,
         [
             # RandomRotation((0,360)),
             ColorJitter(brightness=0.5,hue=0.5),
+            SquarePad(),
             # RandomResizedCrop(size),
             Resize(size),
-            CenterCrop(size),
+            # CenterCrop(size),
             RandomHorizontalFlip(),
             ToTensor(),
             normalize,
