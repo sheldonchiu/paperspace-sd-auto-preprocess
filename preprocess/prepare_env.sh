@@ -15,6 +15,6 @@ echo "Installing Dependencies"
 apt-get update && apt-get install -y git libgl1 libglib2.0-0 aria2 pigz
 pip install --upgrade -r requirements.txt
 pip install realesrgan minio wandb python-logging-discord-handler
-pip install xformers==0.0.16rc396
+pip install xformers==0.0.16rc425
 
 #python3 /notebooks/preprocess/main.py
