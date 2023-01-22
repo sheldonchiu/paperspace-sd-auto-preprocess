@@ -203,7 +203,8 @@ def main(model_checkpoint, class_file, data_dir,
         dataloader_num_workers=4,
         push_to_hub= hub_id is not None,
         hub_model_id=hub_id,
-        hub_strategy="checkpoint"
+        hub_strategy="checkpoint",
+        tf32=True,
     )
      
     # Detecting last checkpoint.
