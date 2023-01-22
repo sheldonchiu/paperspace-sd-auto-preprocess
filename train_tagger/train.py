@@ -45,10 +45,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class SquarePad:
     def __call__(self, image):
-        s = image.size
-        max_wh = np.max(s[-1], s[-2])
-        hp = int((max_wh - s[-1]) / 2)
-        vp = int((max_wh - s[-2]) / 2)
+        w, h = image.size
+        max_wh = np.max([w, h])
+        hp = int((max_wh - w) / 2)
+        vp = int((max_wh - h) / 2)
         padding = (hp, vp, hp, vp)
         return F.pad(image, padding, 0, 'constant')
 
