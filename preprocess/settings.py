@@ -35,7 +35,7 @@ vae_model_url = os.environ.get("VAE_MODEL_URL", "https://huggingface.co/hakurei/
 vae_model_hub = os.environ.get("VAE_MODEL_HUB",None)
 
 vae_model_url_2 = os.environ.get("VAE_MODEL_URL_2", None)
-vae_model_hub_2 = os.environ.get("VAE_MODEL_HUB_2","stabilityai/stable-diffusion-2")
+vae_model_hub_2 = os.environ.get("VAE_MODEL_HUB_2","stable-diffusion-2-1")
 
 s3_endpoint_url = os.environ['S3_HOST_URL']
 s3_aws_access_key_id = os.environ['S3_ACCESS_KEY']
