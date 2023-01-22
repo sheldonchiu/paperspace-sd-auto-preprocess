@@ -118,7 +118,7 @@ def main(model_checkpoint, class_file, data_dir,
     _train_transforms = Compose(
         [
             # RandomRotation((0,360)),
-            ColorJitter(brightness=0.5,hue=0.5),
+            ColorJitter(hue=0.5),
             SquarePad(),
             # RandomResizedCrop(size),
             Resize(size),
