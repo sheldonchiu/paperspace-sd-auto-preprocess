@@ -15,6 +15,7 @@ bool_t = lambda x: x.lower() in ['true', 'yes', '1']
 skip_download = bool_t(os.environ.get('SKIP_DOWNLOAD', '0'))
 skip_extract = bool_t(os.environ.get('SKIP_EXTRACT', '0'))
 tag_using_wd14 = bool_t(os.environ.get('TAG_USING_WD14', '1'))
+wd14_thresh = float(os.environ.get('WD14_THRESHOLD', 0.35))
 wd14_batch_size = int(os.environ.get('WD14_BATCH_SIZE', 4))
 caption_using_blip = bool_t(os.environ.get('CAPTION_USING_BLIP', '1'))
 blip_batch_size = int(os.environ.get('BLIP_BATCH_SIZE', 16))

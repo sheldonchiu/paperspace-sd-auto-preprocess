@@ -71,7 +71,7 @@ def main():
                 if settings.tag_using_wd14:
                     # create tag using wd14 and storing with .tag extension in the same directory
                     logger.info(f"Start tagging for {file}")
-                    wd_args = prepare_wd_parser(target_dir, batch_size=settings.wd14_batch_size, caption_extention=tag_extension)
+                    wd_args = prepare_wd_parser(target_dir, thresh=settings.wd14_thresh, batch_size=settings.wd14_batch_size, caption_extention=tag_extension)
                     task = context.Process(target=tag_images_by_wd14_tagger.main, args=(wd_args,))
                     task.start()
                     task.join()
