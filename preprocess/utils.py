@@ -294,7 +294,6 @@ def load_config_from_file(file_path):
     with open(file_path, 'r') as f:
         config = json.load(f)
     for key, value in config.items():
-        value = re.sub(r'[^\w]', '', value)
         exec(f"settings.{key}={value}")
         
         
