@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import os.path as osp
 
 # will add path to kohya trainer in settings
@@ -148,7 +149,9 @@ def main():
                 logger.exception(f"Failed to process {file}")
         
     downloader.shutdown(wait=True)
+    uploader.shutdown(wait=True)
     
 if __name__ == '__main__':
     while True:
         main()
+        time.sleep(settings.main_loop_interval)

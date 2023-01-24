@@ -1,13 +1,10 @@
 import os
 import sys
 import os.path as osp
-from minio import Minio
-from minio.error import S3Error
 from glob import glob
 import argparse
 import settings
 import logging
-from discord_logging.handler import DiscordHandler
 import gzip, tarfile
 import shutil
 from tqdm.auto import tqdm
@@ -15,16 +12,20 @@ import time
 from pathlib import Path
 import json
 
-import re
 logger = logging.getLogger(__name__)
-
-s3 = Minio(
-    settings.s3_endpoint_url,
-    access_key=settings.s3_aws_access_key_id,
-    secret_key=settings.s3_aws_secret_access_key,
-)
+try:
+    from minio import Minio
+except:
+    logger.warning('Minio was not installed')
 
 WD14_TAGGER_REPO = 'SmilingWolf/wd-v1-4-vit-tagger'
+
+def get_s3_connection():
+    return Minio(
+            settings.s3_endpoint_url,
+            access_key=settings.s3_aws_access_key_id,
+            secret_key=settings.s3_aws_secret_access_key,
+        )
 
 def prepare_wd_parser(train_data_dir, thresh=0.35, batch_size=4, caption_extention='.txt'):
     parser = argparse.ArgumentParser()
@@ -181,6 +182,7 @@ def download_model(model_dir, url):
 def upload(bucketName, remotePath, file):
     if osp.isfile(file):
         try:
+            s3 = get_s3_connection()
             s3.fput_object(bucketName, remotePath, file)
             return True
         except:
@@ -200,6 +202,7 @@ def check_work_queue():
 
 def s3_download(bucketName, remotePath, localPath):
     try:
+        s3 = get_s3_connection()
         logger.info(f"Downloading {remotePath}")
         s3.fget_object(bucketName, remotePath, localPath)
         logger.info(f"Finish Downloading {remotePath}")
@@ -223,6 +226,7 @@ def download_with_queue(data):
     
 def get_list_of_files(bucketName):
     try:
+        s3 = get_s3_connection()
         response = [o.object_name for o in s3.list_objects(bucketName)]
     except KeyError:
         response = []
@@ -272,6 +276,7 @@ def test_tag_extension(target_dir, tag_extension, tag_extension2):
         return None
     
 def setup_logger(logger):
+    from discord_logging.handler import DiscordHandler
     # Silence requests and discord_webhook internals as otherwise this example will be too noisy
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)

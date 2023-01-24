@@ -32,14 +32,16 @@ cafe_batch_size = int(os.environ.get('CAFE_BATCH_SIZE', 250))
 filter_anime_thresh = float(os.environ.get('FILTER_ANI_THRESH', 0.6))
 filter_waifu_thresh = float(os.environ.get('FILTER_WAIFU_THRESH', 0.6))
 
+main_loop_interval = int(os.environ.get('MAIN_LOOP_INTERVAL', 60*5))
+
 vae_model_url = os.environ.get("VAE_MODEL_URL", "https://huggingface.co/hakurei/waifu-diffusion-v1-3/resolve/main/wd-v1-3-float32.ckpt")
 vae_model_hub = os.environ.get("VAE_MODEL_HUB",None)
 
 vae_model_url_2 = os.environ.get("VAE_MODEL_URL_2", None)
 vae_model_hub_2 = os.environ.get("VAE_MODEL_HUB_2","stable-diffusion-2-1")
 
-s3_endpoint_url = os.environ['S3_HOST_URL']
-s3_aws_access_key_id = os.environ['S3_ACCESS_KEY']
-s3_aws_secret_access_key = os.environ['S3_SECRET_KEY']
+s3_endpoint_url = os.environ.get('S3_HOST_URL')
+s3_aws_access_key_id = os.environ.get('S3_ACCESS_KEY')
+s3_aws_secret_access_key = os.environ.get('S3_SECRET_KEY')
 
-discord_webhook_url = os.environ['DISCORD_WEBHOOK_URL']
+discord_webhook_url = os.environ.get('DISCORD_WEBHOOK_URL')
