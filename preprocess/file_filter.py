@@ -12,6 +12,7 @@ import settings
 import json
 from datasets import load_dataset
 import logging
+from utils import load_config_from_file
 logger = logging.getLogger(__name__)
 
 image_format = ['jpeg','jpg', 'png', 'webp']
@@ -62,7 +63,9 @@ def add_custom_tag(tag_file, custom_tags):
     with open(tag_file,'w') as f:
         f.write(','.join(words))
 #%%
-def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe_aesthetic=False, debug_dir=None):
+def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe_aesthetic=False, debug_dir=None, config=None):
+    if config:
+        load_config_from_file(config)
 
     if osp.isdir(dst_path):
         shutil.rmtree(dst_path)

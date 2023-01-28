@@ -61,7 +61,8 @@ def main():
                 # reload setting to clean previous custom settings
                 importlib.reload(settings)
                 # load custom settings from config file in job zip
-                load_config_from_file(osp.join(target_dir, "config.json"))
+                config_file_path = osp.join(target_dir, "config.json")
+                load_config_from_file(config_file_path)
                 
                 filter_dst = f"{target_dir}_filter" if settings.enable_filter else target_dir
                 debug_dir = f"{target_dir}_debug" if settings.save_img_for_debug else None
@@ -72,7 +73,7 @@ def main():
                 if settings.tag_using_wd14:
                     # create tag using wd14 and storing with .tag extension in the same directory
                     logger.info(f"Start tagging for {file}")
-                    wd_args = prepare_wd_parser(target_dir, thresh=settings.wd14_thresh, batch_size=settings.wd14_batch_size, caption_extention=tag_extension)
+                    wd_args = prepare_wd_parser(target_dir, thresh=settings.wd14_thresh, batch_size=settings.wd14_batch_size, caption_extention=tag_extension, config=config_file_path)
                     task = context.Process(target=tag_images_by_wd14_tagger.main, args=(wd_args,))
                     task.start()
                     task.join()
@@ -90,7 +91,7 @@ def main():
                     # use tag created by wd14 and filter, save symbolic links in folder {train_dir}_filter
                     logger.info(f"Start filter for {file}")
                     # since data dir has changed, need to update target_dir
-                    task = context.Process(target=file_filter.main, args=(target_dir, filter_dst,tag_extension, caption_extension, settings.filter_using_cafe_aesthetic,debug_dir))
+                    task = context.Process(target=file_filter.main, args=(target_dir, filter_dst, tag_extension, caption_extension, settings.filter_using_cafe_aesthetic,debug_dir))
                     task.start()
                     task.join()
                     logger.info(f"Finish filter for {file}")
