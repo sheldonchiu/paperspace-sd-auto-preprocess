@@ -46,8 +46,6 @@ def main():
     files = get_list_of_files(bucket_name)
     #0.tar.gz -> 0-result.tar.gz
     files_to_process = []
-    tag_extension = '.tag'
-    caption_extension = '.caption'
     for f in files:
         filename = f[:f.find('.')]
         if 'result' not in f and f'{filename}-result.tar.gz' not in files:
@@ -55,6 +53,8 @@ def main():
             
     results = downloader.map(download_with_queue, [(bucket_name, f, osp.join(settings.data_download_path, osp.basename(f))) for f in files_to_process])
     for file in files_to_process:
+        tag_extension = '.tag'
+        caption_extension = '.caption'
         local_path = osp.join(settings.data_download_path, osp.basename(file))
         if next(results) and (target_dir := extract(local_path)):
             try:

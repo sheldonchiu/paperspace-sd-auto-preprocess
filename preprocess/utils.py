@@ -208,7 +208,9 @@ def s3_download(bucketName, remotePath, localPath):
         logger.info(f"Finish Downloading {remotePath}")
         return True
     except:
-        logger.exception("message")
+        logger.exception(f"Download failed for file {remotePath}")
+        if osp.isfile(localPath):
+            os.remove(localPath)
         return False
 
 def download_with_queue(data):
