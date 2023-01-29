@@ -73,7 +73,7 @@ def main():
                 if settings.tag_using_wd14:
                     # create tag using wd14 and storing with .tag extension in the same directory
                     logger.info(f"Start tagging for {file}")
-                    wd_args = prepare_wd_parser(target_dir, thresh=settings.wd14_thresh, batch_size=settings.wd14_batch_size, caption_extention=tag_extension, config=config_file_path)
+                    wd_args = prepare_wd_parser(target_dir, thresh=settings.wd14_thresh, batch_size=settings.wd14_batch_size, caption_extention=tag_extension)
                     task = context.Process(target=tag_images_by_wd14_tagger.main, args=(wd_args,))
                     task.start()
                     task.join()
@@ -91,7 +91,7 @@ def main():
                     # use tag created by wd14 and filter, save symbolic links in folder {train_dir}_filter
                     logger.info(f"Start filter for {file}")
                     # since data dir has changed, need to update target_dir
-                    task = context.Process(target=file_filter.main, args=(target_dir, filter_dst, tag_extension, caption_extension, settings.filter_using_cafe_aesthetic,debug_dir))
+                    task = context.Process(target=file_filter.main, args=(target_dir, filter_dst, tag_extension, caption_extension, settings.filter_using_cafe_aesthetic, debug_dir, config_file_path))
                     task.start()
                     task.join()
                     logger.info(f"Finish filter for {file}")
