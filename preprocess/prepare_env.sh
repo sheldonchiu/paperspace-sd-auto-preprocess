@@ -19,6 +19,8 @@ pip install -r requirements.txt
 pip install realesrgan minio python-logging-discord-handler triton==2.0.0.dev20221202
 pip install xformers==0.0.16rc425
 
+mkdir /tmp/stable-diffusion/
+
 if [ -v VAE_MODEL_URL ]; then
     wget $VAE_MODEL_URL -P /tmp/stable-diffusion/
 fi
