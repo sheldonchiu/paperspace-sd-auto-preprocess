@@ -52,7 +52,8 @@ def main():
             files_to_process.append(f)
             
     results = downloader.map(download_with_queue, [(bucket_name, f, osp.join(settings.data_download_path, osp.basename(f))) for f in files_to_process])
-    for file in files_to_process:
+        
+    for file in files_to_process:    
         tag_extension = '.tag'
         caption_extension = '.caption'
         local_path = osp.join(settings.data_download_path, osp.basename(file))
@@ -63,6 +64,19 @@ def main():
                 # load custom settings from config file in job zip
                 config_file_path = osp.join(target_dir, "config.json")
                 load_config_from_file(config_file_path)
+                
+                # download after loading custom config for a more flexible batch processing, but concurrent download before next() should be faster
+                if settings.vae_model_url:
+                    # sd_model_path = osp.join(settings.model_path, 'stable-diffusion', osp.basename(settings.vae_model_url))
+                    sd_model_path = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url)
+                else:
+                    sd_model_path = settings.vae_model_hub
+                
+                if settings.vae_model_url_2:
+                    # sd_model_path_2 = osp.join(settings.model_path, 'stable-diffusion', osp.basename(settings.vae_model_url_2))
+                    sd_model_path_2 = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url_2)
+                else:
+                    sd_model_path_2 = settings.vae_model_hub_2
                 
                 filter_dst = f"{target_dir}_filter" if settings.enable_filter else target_dir
                 debug_dir = f"{target_dir}_debug" if settings.save_img_for_debug else None
@@ -119,17 +133,6 @@ def main():
                 
                 logger.info(f"Start bucketing for {file}")
                 lat_file = osp.join(filter_dst,'meta_lat.json')
-                if settings.vae_model_url:
-                    sd_model_path = osp.join(settings.model_path, 'stable-diffusion', osp.basename(settings.vae_model_url))
-                    # sd_model_path = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url)
-                else:
-                    sd_model_path = settings.vae_model_hub
-                
-                if settings.vae_model_url_2:
-                    sd_model_path_2 = osp.join(settings.model_path, 'stable-diffusion', osp.basename(settings.vae_model_url_2))
-                    # sd_model_path_2 = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url_2)
-                else:
-                    sd_model_path_2 = settings.vae_model_hub_2
                 
                 bucket_args = prepare_bucket_parser(filter_dst, meta_file, lat_file, sd_model_path, 
                                                     osp.join(settings.model_path, 'upscaler'), 
