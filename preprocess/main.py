@@ -120,12 +120,14 @@ def main():
                 logger.info(f"Start bucketing for {file}")
                 lat_file = osp.join(filter_dst,'meta_lat.json')
                 if settings.vae_model_url:
-                    sd_model_path = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url)
+                    sd_model_path = osp.join(settings.model_path, 'stable-diffusion', osp.basename(settings.vae_model_url))
+                    # sd_model_path = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url)
                 else:
                     sd_model_path = settings.vae_model_hub
                 
                 if settings.vae_model_url_2:
-                    sd_model_path_2 = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url_2)
+                    sd_model_path_2 = osp.join(settings.model_path, 'stable-diffusion', osp.basename(settings.vae_model_url_2))
+                    # sd_model_path_2 = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url_2)
                 else:
                     sd_model_path_2 = settings.vae_model_hub_2
                 
