@@ -3,3 +3,5 @@ minio
 pytz
 selenium
 webdriver-manager
+huggingface-hub
+python-dotenv

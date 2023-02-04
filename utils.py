@@ -10,8 +10,6 @@ logger = logging.getLogger(__name__)
 api_key = os.environ['PAPERSPACE_API_KEY']
 priority = ['Free-A4000','Free-RTX5000', 'Free-P5000']
 
-
-
 notebooks_client = NotebooksClient(api_key)
 machineTypes_client = MachineTypesClient(api_key)
 projects_client = ProjectsClient(api_key)

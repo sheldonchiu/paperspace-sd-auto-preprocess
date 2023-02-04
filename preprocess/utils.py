@@ -100,7 +100,8 @@ def prepare_clean_parser(in_json,out_json):
 def prepare_bucket_parser(train_data_dir, in_json, out_json,
                           model_name_or_path, upscale_model_dir, 
                           model_name_or_path_v2=None,
-                          debug_dir=None, upscale_outscale=None):
+                          debug_dir=None, upscale_outscale=None, 
+                          batch_size=None, flip_aug=False):
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_dir", type=str,
                         help="directory for train images / 学習画像データのディレクトリ")
@@ -159,16 +160,19 @@ def prepare_bucket_parser(train_data_dir, in_json, out_json,
     s = [   train_data_dir, 
             in_json,out_json,
             model_name_or_path,
-            '--flip_aug',
-            '--upscale',
-            '--upscale_model_dir', upscale_model_dir
         ]
+    if upscale_model_dir:
+        s+= ['--upscale', '--upscale_model_dir', upscale_model_dir]
+    if flip_aug:
+        s += ['--flip_aug']
     if upscale_outscale:
         s += ['--upscale_outscale', str(upscale_outscale)]
     if debug_dir:
         s += ['--debug_dir', debug_dir]
     if model_name_or_path_v2:
         s += ['--model_name_or_path_v2', model_name_or_path_v2]
+    if batch_size:
+        s += ['--batch_size', str(batch_size)]
     args = parser.parse_args(s)
 
     return args

@@ -23,7 +23,12 @@ use_original_tags = bool_t(os.environ.get('USE_ORIGINAL_TAGS', '0'))
 enable_filter = bool_t(os.environ.get('ENABLE_FILTER', '1'))
 filter_using_cafe_aesthetic = bool_t(os.environ.get('FILTER_USING_CAFE', '1'))
 save_img_for_debug = bool_t(os.environ.get('SAVE_IMG_FOR_DEBUG', '0'))
+
+enable_upscaler = bool_t(os.environ.get('ENABLE_UPSCALER'), '1')
 upscale_outscale = int(os.environ.get('UPSCALE_OUTSCALE', 2))
+bucketing_batch_szie = int(os.environ.get('BUCKETING_BATCH_SIZE', 2))
+bucketing_flip_aug = bool_t(os.environ.get('BUCKETING_FLIP_AUG'), '1')
+
 pigz_num_workers = int(os.environ.get('PIGZ_NUM_WORKERS', 8))
 prefetch_num_file = int(os.environ.get('PREFETCH_NUM_FILE', 1))
 

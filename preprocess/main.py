@@ -135,9 +135,11 @@ def main():
                 lat_file = osp.join(filter_dst,'meta_lat.json')
                 
                 bucket_args = prepare_bucket_parser(filter_dst, meta_file, lat_file, sd_model_path, 
-                                                    osp.join(settings.model_path, 'upscaler'), 
+                                                    osp.join(settings.model_path, 'upscaler') if settings.enable_upscaler else None, 
                                                     debug_dir=debug_dir,model_name_or_path_v2=sd_model_path_2,
-                                                    upscale_outscale=settings.upscale_outscale
+                                                    upscale_outscale=settings.upscale_outscale,
+                                                    batch_size=settings.bucketing_batch_szie,
+                                                    flip_aug=settings.bucketing_flip_aug
                                                     )
                 task = context.Process(target=prepare_buckets_latents.main, args=(bucket_args,))
                 task.start()

@@ -1,3 +1,5 @@
 *.secret
-master.py
+master_train.py
 **/__pycache__/**
+prepare.py
+.env
