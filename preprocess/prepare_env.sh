@@ -12,11 +12,11 @@ fi
 cd $root_path/$repo_name
 
 echo "Installing Dependencies"
-apt-get update && apt-get install -y git libgl1 libglib2.0-0 aria2 pigz
+apt-get update && apt-get install -y build-essential git libgl1 libglib2.0-0 aria2 pigz
 pip install -U pip
 pip install protobuf==3.20.3
 pip install -r requirements.txt
-pip install realesrgan minio python-logging-discord-handler triton==2.0.0.dev20221202
+pip install realesrgan minio python-logging-discord-handler triton==2.0.0.dev20221202 salesforce-lavis
 pip install xformers==0.0.16rc425
 
 # mkdir -p /tmp/stable-diffusion/
