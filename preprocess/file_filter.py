@@ -115,16 +115,6 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         logger.info(f"Finish calculating aesthetic")
         for idx, item in enumerate(output):
             score = scores[idx]
-            # if score['anime'] < settings.filter_anime_thresh \
-                    # or score['not_waifu'] < settings.filter_waifu_thresh:
-                    #     if debug_dir:
-                    #         debug_output.append({
-                    #                         'img_src': item['img_src'],
-                    #                         'id': item['id'],
-                    #                         'reason': "aesthetic",
-                    #                         'score': score
-                    #                     })
-                    #     continue
             add_custom_tag(item['tag_src'], quality[int(score['aesthetic'] * 100)])
             final_output.append(item)
     else:
@@ -136,13 +126,15 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         imgFile = item['img_src']
         img_dst = osp.join(dst_path, osp.basename(imgFile))
         tag_dst = osp.join(dst_path, f"{item['id']}{tag_extension}")
-        tag_ori_dst = osp.join(dst_path, f"{item['id']}.txt")
-        caption_dst = osp.join(dst_path, f"{item['id']}{caption_extension}")
+        
         os.symlink(imgFile, img_dst)
         os.symlink(item['tag_src'], tag_dst)
         if settings.use_original_tags:
+            tag_ori_dst = osp.join(dst_path, f"{item['id']}.txt")
             os.symlink(item['tag_ori'], tag_ori_dst)
-        os.symlink(item['caption_src'], caption_dst)
+        if osp.isfile(item['caption_src']):
+            caption_dst = osp.join(dst_path, f"{item['id']}{caption_extension}")
+            os.symlink(item['caption_src'], caption_dst)
         
     if debug_dir:
         os.makedirs(osp.join(debug_dir, "filter"), exist_ok=True)

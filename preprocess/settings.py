@@ -48,5 +48,7 @@ vae_model_hub_2 = os.environ.get("VAE_MODEL_HUB_2","stabilityai/stable-diffusion
 s3_endpoint_url = os.environ.get('S3_HOST_URL')
 s3_aws_access_key_id = os.environ.get('S3_ACCESS_KEY')
 s3_aws_secret_access_key = os.environ.get('S3_SECRET_KEY')
+s3_bucket_name = os.environ.get('S3_BUCKET_NAME')
+s3_cache_bucket_name = os.environ.get('S3_CACHE_BUCKET_NAME')
 
 discord_webhook_url = os.environ.get('DISCORD_WEBHOOK_URL')

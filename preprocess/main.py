@@ -10,7 +10,7 @@ logger = logging.getLogger()
 setup_logger(logger)
 
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, wait
 from multiprocessing import active_children
 import signal
 import settings
@@ -37,12 +37,12 @@ def main():
         logger.error("cannot disable wd14 tagger and not use original tags")
         sys.exit(-1)
         
-    signal.signal(signal.SIGTERM, sigterm_handler)
+    signal.signal(signal.SIGINT, sigterm_handler)
     downloader = ProcessPoolExecutor(max_workers=1)
     uploader = ProcessPoolExecutor(max_workers=1)
     # fork will cause tf cudu init error, unknown reason
     context = multiprocessing.get_context('spawn')
-    bucket_name = os.environ['S3_BUCKET_NAME']
+    bucket_name = settings.s3_bucket_name
     files = get_list_of_files(bucket_name)
     #0.tar.gz -> 0-result.tar.gz
     files_to_process = []
@@ -85,66 +85,59 @@ def main():
                     os.makedirs(debug_dir, exist_ok=True)
                     
                 if settings.tag_using_wd14:
+                    with jobContext("tag", file):
                     # create tag using wd14 and storing with .tag extension in the same directory
-                    logger.info(f"Start tagging for {file}")
-                    wd_args = prepare_wd_parser(target_dir, thresh=settings.wd14_thresh, batch_size=settings.wd14_batch_size, caption_extention=tag_extension)
-                    task = context.Process(target=tag_images_by_wd14_tagger.main, args=(wd_args,))
-                    task.start()
-                    task.join()
-                    logger.info(f"Finish tagging for {file}")
-                    
-                if settings.caption_using_blip:
-                    logger.info(f"Start captioning for {file}")
-                    blip_args = prepare_caption_parser(target_dir, batch_size=settings.blip_batch_size, caption_extention=caption_extension)
-                    task = context.Process(target=make_captions.main, args=(blip_args,))
-                    task.start()
-                    task.join()
-                    logger.info(f"Finish captioning for {file}")
+                        wd_args = prepare_wd_parser(target_dir, thresh=settings.wd14_thresh, batch_size=settings.wd14_batch_size, caption_extention=tag_extension)
+                        task = context.Process(target=tag_images_by_wd14_tagger.main, args=(wd_args,))
+                        task.start(); task.join()
                 
                 if settings.enable_filter:
-                    # use tag created by wd14 and filter, save symbolic links in folder {train_dir}_filter
-                    logger.info(f"Start filter for {file}")
-                    # since data dir has changed, need to update target_dir
-                    task = context.Process(target=file_filter.main, args=(target_dir, filter_dst, tag_extension, caption_extension, settings.filter_using_cafe_aesthetic, debug_dir, config_file_path))
-                    task.start()
-                    task.join()
-                    logger.info(f"Finish filter for {file}")
-                
-                logger.info(f"Start metadata merging for {file}")
-                meta_file = osp.join(filter_dst,'meta_cap_dd.json')
-                if settings.use_original_tags:
-                    merge_tag_extension = test_tag_extension(filter_dst, '.txt', tag_extension)
-                    if merge_tag_extension is None:
-                        logger.error("No tag file in source directory, unknow issue")
-                        raise Exception
-                else:
-                    merge_tag_extension = tag_extension
-                merge_arg = prepare_merge_parser(filter_dst, meta_file, merge_tag_extension)
-                merge_dd_tags_to_metadata.main(merge_arg)
+                    with jobContext("filter", file):
+                        # use tag created by wd14 and filter, save symbolic links in folder {train_dir}_filter
+                        # since data dir has changed, need to update target_dir
+                        task = context.Process(target=file_filter.main, args=(target_dir, filter_dst, tag_extension, caption_extension, settings.filter_using_cafe_aesthetic, debug_dir, config_file_path))
+                        task.start(); task.join()
+                    
                 if settings.caption_using_blip:
-                    merge_arg = prepare_merge_parser(filter_dst, meta_file, caption_extension)
-                    merge_captions_to_metadata.main(merge_arg)
-                logger.info(f"Finish metadata merging for {file}")
+                    with jobContext("caption", file):
+                        blip_args = prepare_caption_parser(filter_dst, batch_size=settings.blip_batch_size, caption_extention=caption_extension)
+                        task = context.Process(target=make_captions.main, args=(blip_args,))
+                        task.start(); task.join()
                 
-                logger.info(f"Start cleaning metadata for {file}")
-                clean_args = prepare_clean_parser(meta_file,meta_file)
-                clean_captions_and_tags.main(clean_args)
-                logger.info(f"Finish cleaning metadata for {file}")
+                with jobContext("merge", file):
+                    meta_file = osp.join(filter_dst,'meta_cap_dd.json')
+                    if settings.use_original_tags:
+                        merge_tag_extension = test_tag_extension(filter_dst, '.txt', tag_extension)
+                        if merge_tag_extension is None:
+                            logger.error("No tag file in source directory, unknow issue")
+                            raise Exception
+                    else:
+                        merge_tag_extension = tag_extension
+                    merge_arg = prepare_merge_parser(filter_dst, meta_file, merge_tag_extension)
+                    merge_dd_tags_to_metadata.main(merge_arg)
+                    if settings.caption_using_blip:
+                        merge_arg = prepare_merge_parser(filter_dst, meta_file, caption_extension)
+                        merge_captions_to_metadata.main(merge_arg)
                 
-                logger.info(f"Start bucketing for {file}")
-                lat_file = osp.join(filter_dst,'meta_lat.json')
+                with jobContext("clean", file):
+                    clean_args = prepare_clean_parser(meta_file,meta_file)
+                    clean_captions_and_tags.main(clean_args)
                 
-                bucket_args = prepare_bucket_parser(filter_dst, meta_file, lat_file, sd_model_path, 
-                                                    osp.join(settings.model_path, 'upscaler') if settings.enable_upscaler else None, 
-                                                    debug_dir=debug_dir,model_name_or_path_v2=sd_model_path_2,
-                                                    upscale_outscale=settings.upscale_outscale,
-                                                    batch_size=settings.bucketing_batch_szie,
-                                                    flip_aug=settings.bucketing_flip_aug
-                                                    )
-                task = context.Process(target=prepare_buckets_latents.main, args=(bucket_args,))
-                task.start()
-                task.join()
-                logger.info(f"Finish bucketing for {file}")
+                with jobContext("bucket", file):
+                    lat_file = osp.join(filter_dst,'meta_lat.json')
+                    bucket_args = prepare_bucket_parser(filter_dst, meta_file, lat_file, sd_model_path, 
+                                                        osp.join(settings.model_path, 'upscaler') if settings.enable_upscaler else None, 
+                                                        debug_dir=debug_dir,model_name_or_path_v2=sd_model_path_2,
+                                                        upscale_outscale=settings.upscale_outscale,
+                                                        batch_size=settings.bucketing_batch_szie,
+                                                        flip_aug=settings.bucketing_flip_aug
+                                                        )
+                    task = context.Process(target=prepare_buckets_latents.main, args=(bucket_args,))
+                    task.start()
+                    cache_result = uploader.submit(cache_progress_watcher, settings.s3_cache_bucket_name, filter_dst, f"{osp.basename(target_dir)}_bucket", '.npz', recursive=True, interval=60*10)
+                    task.join()
+                    Path.touch(osp.join(filter_dst, 'complete'))
+                    wait(cache_result)
                 
                 folders_to_compress = [filter_dst]
                 if debug_dir:
@@ -154,6 +147,9 @@ def main():
                 uploader.submit(compress_and_upload, folders_to_compress, output_path, bucket_name)
                     
             except:
+                # TODO kill uploader if exception occurs
+                Path.touch(osp.join(filter_dst, 'complete'))
+                wait(cache_result)
                 logger.exception(f"Failed to process {file}")
         
     downloader.shutdown(wait=True)

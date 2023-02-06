@@ -11,6 +11,7 @@ from tqdm.auto import tqdm
 import time
 from pathlib import Path
 import json
+from contextlib import ContextDecorator
 
 logger = logging.getLogger(__name__)
 try:
@@ -18,7 +19,7 @@ try:
 except:
     logger.warning('Minio was not installed')
 
-WD14_TAGGER_REPO = 'SmilingWolf/wd-v1-4-vit-tagger'
+DEFAULT_WD14_TAGGER_REPO = 'SmilingWolf/wd-v1-4-convnext-tagger-v2'
 
 def get_s3_connection():
     return Minio(
@@ -30,7 +31,7 @@ def get_s3_connection():
 def prepare_wd_parser(train_data_dir, thresh=0.35, batch_size=4, caption_extention='.txt'):
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
-    parser.add_argument("--repo_id", type=str, default=WD14_TAGGER_REPO,
+    parser.add_argument("--repo_id", type=str, default=DEFAULT_WD14_TAGGER_REPO,
                         help="repo id for wd14 tagger on Hugging Face / Hugging Faceのwd14 taggerのリポジトリID")
     parser.add_argument("--model_dir", type=str, default="wd14_tagger_model",
                         help="directory to store wd14 tagger model / wd14 taggerのモデルを格納するディレクトリ")
@@ -38,6 +39,8 @@ def prepare_wd_parser(train_data_dir, thresh=0.35, batch_size=4, caption_extenti
                         help="force downloading wd14 tagger models / wd14 taggerのモデルを再ダウンロードします")
     parser.add_argument("--thresh", type=float, default=0.35, help="threshold of confidence to add a tag / タグを追加するか判定する閾値")
     parser.add_argument("--batch_size", type=int, default=1, help="batch size in inference / 推論時のバッチサイズ")
+    parser.add_argument("--max_data_loader_n_workers", type=int, default=None,
+                        help="enable image reading by DataLoader with this number of workers (faster) / DataLoaderによる画像読み込みを有効にしてこのワーカー数を適用する（読み込みを高速化）")
     parser.add_argument("--caption_extention", type=str, default=None,
                         help="extension of caption file (for backward compatibility) / 出力されるキャプションファイルの拡張子（スペルミスしていたのを残してあります）")
     parser.add_argument("--caption_extension", type=str, default=".txt", help="extension of caption file / 出力されるキャプションファイルの拡張子")
@@ -45,6 +48,7 @@ def prepare_wd_parser(train_data_dir, thresh=0.35, batch_size=4, caption_extenti
     args = parser.parse_args([train_data_dir, 
                               '--thresh', str(thresh), 
                               '--batch_size',str(batch_size), 
+                              '--max_data_loader_n_workers', '4', 
                               '--caption_extension', caption_extention,
                               '--model_dir', '/tmp/wd14_tagger_model'])
     
@@ -61,6 +65,8 @@ def prepare_caption_parser(train_data_dir, batch_size=4, caption_extention='.cap
     parser.add_argument("--beam_search", action="store_true",
                         help="use beam search (default Nucleus sampling) / beam searchを使う（このオプション未指定時はNucleus sampling）")
     parser.add_argument("--batch_size", type=int, default=1, help="batch size in inference / 推論時のバッチサイズ")
+    parser.add_argument("--max_data_loader_n_workers", type=int, default=None,
+                        help="enable image reading by DataLoader with this number of workers (faster) / DataLoaderによる画像読み込みを有効にしてこのワーカー数を適用する（読み込みを高速化）")
     parser.add_argument("--num_beams", type=int, default=1, help="num of beams in beam search /beam search時のビーム数（多いと精度が上がるが時間がかかる）")
     parser.add_argument("--top_p", type=float, default=0.9, help="top_p in Nucleus sampling / Nucleus sampling時のtop_p")
     parser.add_argument("--max_length", type=int, default=75, help="max length of caption / captionの最大長")
@@ -70,19 +76,27 @@ def prepare_caption_parser(train_data_dir, batch_size=4, caption_extention='.cap
 
     args = parser.parse_args([train_data_dir, 
                               '--batch_size',str(batch_size), 
+                              '--max_data_loader_n_workers', '4',
                               '--caption_extension', caption_extention])
     return args
 
-def prepare_merge_parser(train_data_dir, out_json, caption_extension, in_json=None):
+def prepare_merge_parser(train_data_dir, out_json, caption_extension, in_json=None, recursive=False):
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
     parser.add_argument("out_json", type=str, help="metadata file to output / メタデータファイル書き出し先")
-    parser.add_argument("--in_json", type=str, help="metadata file to input (if omitted and out_json exists, existing out_json is read) / 読み込むメタデータファイル（省略時、out_jsonが存在すればそれを読み込む）")
+    parser.add_argument("--in_json", type=str,
+                        help="metadata file to input (if omitted and out_json exists, existing out_json is read) / 読み込むメタデータファイル（省略時、out_jsonが存在すればそれを読み込む）")
+    parser.add_argument("--caption_extention", type=str, default=None,
+                        help="extension of caption file (for backward compatibility) / 読み込むキャプションファイルの拡張子（スペルミスしていたのを残してあります）")
+    parser.add_argument("--caption_extension", type=str, default=".caption", help="extension of caption file / 読み込むキャプションファイルの拡張子")
     parser.add_argument("--full_path", action="store_true",
                         help="use full path as image-key in metadata (supports multiple directories) / メタデータで画像キーをフルパスにする（複数の学習画像ディレクトリに対応）")
-    parser.add_argument("--debug", action="store_true", help="debug mode, print tags")
-    parser.add_argument("--caption_extension", type=str, default='.txt', help="")
+    parser.add_argument("--recursive", action="store_true",
+                        help="recursively look for training tags in all child folders of train_data_dir / train_data_dirのすべての子フォルダにある学習タグを再帰的に探す")
+    parser.add_argument("--debug", action="store_true", help="debug mode")
     params = [train_data_dir, out_json, '--caption_extension', caption_extension]
+    if recursive:
+        params += ['--recursive']
     if in_json:
         params += ['--in_json', in_json]
     args = parser.parse_args(params)
@@ -114,16 +128,18 @@ def prepare_bucket_parser(train_data_dir, in_json, out_json,
     parser.add_argument("--model_name_or_path_v2", type=str, default=None,
                         help="model name or path to encode latents / latentを取得するためのモデル")
     parser.add_argument("--v2", action='store_true',
-                        help='load Stable Diffusion v2.0 model / Stable Diffusion 2.0のモデルを読み込む')
+                        help='not used (for backward compatibility) / 使用されません（互換性のため残してあります）')
     parser.add_argument("--batch_size", type=int, default=1,
                         help="batch size in inference / 推論時のバッチサイズ")
-    parser.add_argument("--max_resolution", type=str, default="768,768",
+    parser.add_argument("--max_data_loader_n_workers", type=int, default=None,
+                        help="enable image reading by DataLoader with this number of workers (faster) / DataLoaderによる画像読み込みを有効にしてこのワーカー数を適用する（読み込みを高速化）")
+    parser.add_argument("--max_resolution", type=str, default="512,512",
                         help="max resolution in fine tuning (width,height) / fine tuning時の最大画像サイズ 「幅,高さ」（使用メモリ量に関係します）")
     parser.add_argument("--min_bucket_reso", type=int, default=256,
                         help="minimum resolution for buckets / bucketの最小解像度")
     parser.add_argument("--max_bucket_reso", type=int, default=1024,
                         help="maximum resolution for buckets / bucketの最小解像度")
-    parser.add_argument("--mixed_precision", type=str, default="fp16",
+    parser.add_argument("--mixed_precision", type=str, default="no",
                         choices=["no", "fp16", "bf16"], help="use mixed precision / 混合精度を使う場合、その精度")
     parser.add_argument("--full_path", action="store_true",
                         help="use full path as image-key in metadata (supports multiple directories) / メタデータで画像キーをフルパスにする（複数の学習画像ディレクトリに対応）")
@@ -144,7 +160,7 @@ def prepare_bucket_parser(train_data_dir, in_json, out_json,
         type=float,
         default=0.5,
         help=('Denoise strength. 0 for weak denoise (keep noise), 1 for strong denoise ability. '
-              'Only used for the realesr-general-x4v3 model'))
+                'Only used for the realesr-general-x4v3 model'))
     parser.add_argument(
         '--upscale_model_dir', type=str, default='upscale', help='[Option] Model path.')
     parser.add_argument('--upscale_tile', type=int, default=512,
@@ -153,13 +169,16 @@ def prepare_bucket_parser(train_data_dir, in_json, out_json,
                         default=10, help='Tile padding')
     parser.add_argument('--upscale_pre_pad', type=int,
                         default=0, help='Pre padding size at each border')
-    parser.add_argument("--upscale_enable_reso", type=int, default=1500*1500,
+    parser.add_argument("--upscale_enable_reso", type=int, default=1000*1000,
                         help="Images with resolution(w*h) below this will upscale before resize, if upsacle is enabled")
     parser.add_argument(
-        '--debug_dir', type=str, default=None, help='')
+        '--debug_dir', type=str, default=None, help='')  
+    parser.add_argument("--skip_existing", action="store_true",
+                        help="skip images if npz already exists (both normal and flipped exists if flip_aug is enabled) / npzが既に存在する画像をスキップする（flip_aug有効時は通常、反転の両方が存在する画像をスキップ）")
     s = [   train_data_dir, 
             in_json,out_json,
             model_name_or_path,
+            '--skip_existing',
         ]
     if upscale_model_dir:
         s+= ['--upscale', '--upscale_model_dir', upscale_model_dir]
@@ -306,6 +325,33 @@ def load_config_from_file(file_path):
         config = json.load(f)
     for key, value in config.items():
         exec(f"settings.{key}={value}")
+        
+class jobContext(ContextDecorator):
+    def __enter__(self, job_name, file):
+        self.job_name = job_name
+        self.file = file
+        logger.info(f"[START] Stage: {job_name} File: {file}")
+        return self
+
+    def __exit__(self, *exc):
+        logger.info(f"[END] Stage: {self.job_name} File: {self.file}") 
+        return False
+    
+def cache_progress_watcher(bucket_name, target_dir, key, file_extension, recursive=False, interval=60*5):
+    tmp_dir = osp.join(settings.data_download_path, 'cache')
+    os.makedirs(tmp_dir, exist_ok=True)
+    cache_file_name = osp.join(tmp_dir, f"{key}.tar")
+    complete_mark = osp.join(target_dir, 'complete')
+    record = []
+    while not osp.isfile(complete_mark):
+        files = [f for f in glob(osp.join(target_dir, f"**/*{file_extension}" if recursive else f"*{file_extension}"), recursive=recursive) if f not in record]
+        with tarfile.open(cache_file_name, 'a', dereference=True) as f:
+            for file in files:
+                f.add(file, arcname=osp.basename(file))
+        upload(bucket_name, osp.basename(cache_file_name), cache_file_name)
+        time.sleep(interval)
+    
+    os.remove(complete_mark)
         
         
 # config = {"use_original_tags": "0"}
