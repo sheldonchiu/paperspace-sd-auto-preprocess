@@ -20,7 +20,7 @@ class Aesthetic():
         
     def calculate_aesthetic_score(self, images):
         results = {}
-        with tqdm(total=len(self.pipes * len(images)), smoothing=0) as pbar:
+        with tqdm(total=len(self.pipes) * len(images), smoothing=0) as pbar:
             for pipe in self.pipes:
                 for idx, result in enumerate(pipe(KeyDataset(images, 'image'), top_k=5)):
                     output = {}

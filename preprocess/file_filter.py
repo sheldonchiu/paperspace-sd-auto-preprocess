@@ -60,6 +60,7 @@ def add_custom_tag(tag_file, custom_tags):
         tags = f.read()
     words = [t.strip() for t in tags.split(',')]
     words += [t.strip() for t in custom_tags.split(',') if t.strip() != ""]
+    words = list(set(words))
     with open(tag_file,'w') as f:
         f.write(','.join(words))
 #%%
@@ -108,7 +109,6 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
             debug_output[id] = f"Reason: Unknow error;"
             
     if filter_using_cafe_aesthetic:
-        final_output = []
         logger.info("Calculating aesthetics...")
         dataset = load_dataset("imagefolder", data_files = [i['img_src'] for i in output])
         scores = scorer.calculate_aesthetic_score(dataset['train'])
@@ -116,11 +116,8 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
         for idx, item in enumerate(output):
             score = scores[idx]
             add_custom_tag(item['tag_src'], quality[int(score['aesthetic'] * 100)])
-            final_output.append(item)
-    else:
-        final_output = output
     
-    for idx, item in enumerate(final_output):
+    for idx, item in enumerate(output):
         if hasattr(settings, "custom_tags"):
             add_custom_tag(item['tag_src'], settings.custom_tags)
         imgFile = item['img_src']
