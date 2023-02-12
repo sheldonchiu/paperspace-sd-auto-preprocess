@@ -27,7 +27,7 @@ save_img_for_debug = bool_t(os.environ.get('SAVE_IMG_FOR_DEBUG', '0'))
 enable_upscaler = bool_t(os.environ.get('ENABLE_UPSCALER', '1'))
 upscale_outscale = int(os.environ.get('UPSCALE_OUTSCALE', 2))
 bucketing_batch_szie = int(os.environ.get('BUCKETING_BATCH_SIZE', 2))
-bucketing_flip_aug = bool_t(os.environ.get('BUCKETING_FLIP_AUG', '1'))
+bucketing_flip_aug = bool_t(os.environ.get('BUCKETING_FLIP_AUG', '0'))
 
 pigz_num_workers = int(os.environ.get('PIGZ_NUM_WORKERS', 8))
 prefetch_num_file = int(os.environ.get('PREFETCH_NUM_FILE', 1))

@@ -30,7 +30,6 @@ def sigterm_handler(_signo, _stack_frame):
     for child in active:
         child.kill()
     sys.exit(0)
-
     
 def main():
     if not settings.use_original_tags and not settings.tag_using_wd14:

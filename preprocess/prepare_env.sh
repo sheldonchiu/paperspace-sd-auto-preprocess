@@ -17,7 +17,7 @@ pip install -U pip
 pip install protobuf==3.20.3
 pip install -r requirements.txt
 pip install realesrgan minio python-logging-discord-handler triton==2.0.0.dev20230208
-pip install xformers==0.0.16
+pip install xformers==0.0.17.dev447
 
 # mkdir -p /tmp/stable-diffusion/
 
