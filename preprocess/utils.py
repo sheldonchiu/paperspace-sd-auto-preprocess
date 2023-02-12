@@ -322,10 +322,9 @@ def load_config_from_file(file_path):
     with open(file_path, 'r') as f:
         config = json.load(f)
     for key, value in config.items():
-        exec(f'settings.{key}="{value}"')
+        setattr(settings, key, value)
         
 class jobContext(dict):
-    
     def __init__(self, **kwargs):
         self.job_name = kwargs.get('job_name')
         self.file = kwargs.get('file')
