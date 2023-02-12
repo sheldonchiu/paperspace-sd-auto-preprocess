@@ -38,3 +38,30 @@ with open(osp.join(dst, 'meta_lat.json'),'w') as f:
 for k,v in filtered_meta.items():
     v['tags'] = ','.join([clean(t) for t in v['tags'].split(',')])
 # %%
+import concurrent.futures
+import os
+import os.path as osp
+from glob import glob
+
+def read_file(file):
+    with open(file, "r") as f:
+        return osp.basename(file), f.readline().strip()
+
+def main():
+    data_path = "/mnt/d/data/images"
+    captions = glob(osp.join(data_path, '*.caption'))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        results = [executor.submit(read_file, file) for file in captions]
+
+    file_content_map = {result.result()[0]: result.result()[1] for result in concurrent.futures.as_completed(results)}
+    
+    return file_content_map
+file_content_map = main()
+
+# %%
+import json
+data_path = "/mnt/d/data/images"
+with open(osp.join(data_path, 'captions.json'),'w') as f:
+    json.dump(file_content_map, f, indent=4)
+# %%

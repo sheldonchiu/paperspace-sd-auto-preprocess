@@ -17,8 +17,8 @@ skip_extract = bool_t(os.environ.get('SKIP_EXTRACT', '0'))
 tag_using_wd14 = bool_t(os.environ.get('TAG_USING_WD14', '1'))
 wd14_thresh = float(os.environ.get('WD14_THRESHOLD', 0.35))
 wd14_batch_size = int(os.environ.get('WD14_BATCH_SIZE', 4))
-caption_using_blip = bool_t(os.environ.get('CAPTION_USING_BLIP', '1'))
-blip_batch_size = int(os.environ.get('BLIP_BATCH_SIZE', 16))
+enable_caption = bool_t(os.environ.get('ENABLE_CAPTION', '1'))
+caption_batch_size = int(os.environ.get('CAPTION_BATCH_SIZE', 16))
 use_original_tags = bool_t(os.environ.get('USE_ORIGINAL_TAGS', '0'))
 enable_filter = bool_t(os.environ.get('ENABLE_FILTER', '1'))
 filter_using_cafe_aesthetic = bool_t(os.environ.get('FILTER_USING_CAFE', '1'))
@@ -39,11 +39,8 @@ filter_waifu_thresh = float(os.environ.get('FILTER_WAIFU_THRESH', 0.6))
 
 main_loop_interval = int(os.environ.get('MAIN_LOOP_INTERVAL', 60*5))
 
-vae_model_url = os.environ.get("VAE_MODEL_URL", "https://huggingface.co/hakurei/waifu-diffusion-v1-3/resolve/main/wd-v1-3-float32.ckpt")
+vae_model_url = os.environ.get("VAE_MODEL_URL", "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.ckpt")
 vae_model_hub = os.environ.get("VAE_MODEL_HUB",None)
-
-vae_model_url_2 = os.environ.get("VAE_MODEL_URL_2", None)
-vae_model_hub_2 = os.environ.get("VAE_MODEL_HUB_2","stabilityai/stable-diffusion-2-1")
 
 s3_endpoint_url = os.environ.get('S3_HOST_URL')
 s3_aws_access_key_id = os.environ.get('S3_ACCESS_KEY')

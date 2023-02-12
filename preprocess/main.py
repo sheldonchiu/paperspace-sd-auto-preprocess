@@ -17,7 +17,7 @@ import settings
 import importlib
 
 import file_filter
-import make_captions
+import make_captions_by_ofa
 import tag_images_by_wd14_tagger
 import merge_dd_tags_to_metadata
 import merge_captions_to_metadata
@@ -52,8 +52,15 @@ def main():
             files_to_process.append(f)
             
     results = downloader.map(download_with_queue, [(bucket_name, f, osp.join(settings.data_download_path, osp.basename(f))) for f in files_to_process])
-        
+
+    if settings.vae_model_url:
+        # sd_model_path = osp.join(settings.model_path, 'stable-diffusion', osp.basename(settings.vae_model_url))
+        sd_model_path = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url)
+    else:
+        sd_model_path = settings.vae_model_hub
+
     for file in files_to_process:    
+        # cache_result = None
         tag_extension = '.tag'
         caption_extension = '.caption'
         local_path = osp.join(settings.data_download_path, osp.basename(file))
@@ -65,19 +72,6 @@ def main():
                 config_file_path = osp.join(target_dir, "config.json")
                 load_config_from_file(config_file_path)
                 
-                # download after loading custom config for a more flexible batch processing, but concurrent download before next() should be faster
-                if settings.vae_model_url:
-                    # sd_model_path = osp.join(settings.model_path, 'stable-diffusion', osp.basename(settings.vae_model_url))
-                    sd_model_path = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url)
-                else:
-                    sd_model_path = settings.vae_model_hub
-                
-                if settings.vae_model_url_2:
-                    # sd_model_path_2 = osp.join(settings.model_path, 'stable-diffusion', osp.basename(settings.vae_model_url_2))
-                    sd_model_path_2 = download_model(osp.join(settings.model_path, 'stable-diffusion'), settings.vae_model_url_2)
-                else:
-                    sd_model_path_2 = settings.vae_model_hub_2
-                
                 filter_dst = f"{target_dir}_filter" if settings.enable_filter else target_dir
                 debug_dir = f"{target_dir}_debug" if settings.save_img_for_debug else None
                 
@@ -85,26 +79,26 @@ def main():
                     os.makedirs(debug_dir, exist_ok=True)
                     
                 if settings.tag_using_wd14:
-                    with jobContext("tag", file):
+                    with jobContext(job_name="tag", file=file):
                     # create tag using wd14 and storing with .tag extension in the same directory
                         wd_args = prepare_wd_parser(target_dir, thresh=settings.wd14_thresh, batch_size=settings.wd14_batch_size, caption_extention=tag_extension)
                         task = context.Process(target=tag_images_by_wd14_tagger.main, args=(wd_args,))
                         task.start(); task.join()
                 
                 if settings.enable_filter:
-                    with jobContext("filter", file):
+                    with jobContext(job_name="filter",file=file):
                         # use tag created by wd14 and filter, save symbolic links in folder {train_dir}_filter
                         # since data dir has changed, need to update target_dir
                         task = context.Process(target=file_filter.main, args=(target_dir, filter_dst, tag_extension, caption_extension, settings.filter_using_cafe_aesthetic, debug_dir, config_file_path))
                         task.start(); task.join()
                     
-                if settings.caption_using_blip:
-                    with jobContext("caption", file):
-                        blip_args = prepare_caption_parser(filter_dst, batch_size=settings.blip_batch_size, caption_extention=caption_extension)
-                        task = context.Process(target=make_captions.main, args=(blip_args,))
+                if settings.enable_caption:
+                    with jobContext(job_name="caption", file=file):
+                        caption_args = prepare_caption_parser(filter_dst, batch_size=settings.caption_batch_size, caption_extention=caption_extension)
+                        task = context.Process(target=make_captions_by_ofa.main, args=(caption_args,))
                         task.start(); task.join()
                 
-                with jobContext("merge", file):
+                with jobContext(job_name="merge", file=file):
                     meta_file = osp.join(filter_dst,'meta_cap_dd.json')
                     if settings.use_original_tags:
                         merge_tag_extension = test_tag_extension(filter_dst, '.txt', tag_extension)
@@ -119,25 +113,25 @@ def main():
                         merge_arg = prepare_merge_parser(filter_dst, meta_file, caption_extension)
                         merge_captions_to_metadata.main(merge_arg)
                 
-                with jobContext("clean", file):
+                with jobContext(job_name="clean", file=file):
                     clean_args = prepare_clean_parser(meta_file,meta_file)
                     clean_captions_and_tags.main(clean_args)
                 
-                with jobContext("bucket", file):
+                with jobContext(job_name="bucket", file=file):
                     lat_file = osp.join(filter_dst,'meta_lat.json')
                     bucket_args = prepare_bucket_parser(filter_dst, meta_file, lat_file, sd_model_path, 
                                                         osp.join(settings.model_path, 'upscaler') if settings.enable_upscaler else None, 
-                                                        debug_dir=debug_dir,model_name_or_path_v2=sd_model_path_2,
+                                                        debug_dir=debug_dir,
                                                         upscale_outscale=settings.upscale_outscale,
                                                         batch_size=settings.bucketing_batch_szie,
                                                         flip_aug=settings.bucketing_flip_aug
                                                         )
                     task = context.Process(target=prepare_buckets_latents.main, args=(bucket_args,))
                     task.start()
-                    cache_result = uploader.submit(cache_progress_watcher, settings.s3_cache_bucket_name, filter_dst, f"{osp.basename(target_dir)}_bucket", '.npz', recursive=True, interval=60*10)
+                    # cache_result = uploader.submit(cache_progress_watcher, settings.s3_cache_bucket_name, filter_dst, f"{osp.basename(target_dir)}_bucket", '.npz', recursive=True, interval=60*10)
                     task.join()
-                    Path.touch(osp.join(filter_dst, 'complete'))
-                    wait(cache_result)
+                    # Path.touch(osp.join(filter_dst, 'complete'))
+                    # wait(cache_result)
                 
                 folders_to_compress = [filter_dst]
                 if debug_dir:
@@ -148,8 +142,10 @@ def main():
                     
             except:
                 # TODO kill uploader if exception occurs
-                Path.touch(osp.join(filter_dst, 'complete'))
-                wait(cache_result)
+                # if cache_result is not None:
+                    # if not osp.isfile(osp.join(filter_dst, 'complete')):
+                        # Path.touch(osp.join(filter_dst, 'complete'))
+                    # wait(cache_result)
                 logger.exception(f"Failed to process {file}")
         
     downloader.shutdown(wait=True)

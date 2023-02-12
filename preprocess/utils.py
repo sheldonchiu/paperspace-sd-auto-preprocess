@@ -57,21 +57,21 @@ def prepare_wd_parser(train_data_dir, thresh=0.35, batch_size=4, caption_extenti
 def prepare_caption_parser(train_data_dir, batch_size=4, caption_extention='.caption'):
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
-    parser.add_argument("--caption_weights", type=str, default="https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_large_caption.pth",
-                        help="BLIP caption weights (model_large_caption.pth) / BLIP captionの重みファイル(model_large_caption.pth)")
+    parser.add_argument("--caption_weights", type=str, default="https://huggingface.co/sheldonxxxx/ofa_for_repo/resolve/main/caption_huge_best.pt",
+                        help="OFA caption weights (caption_huge_best.pth) / OFA captionの重みファイル(model_large_caption.pth)")
     parser.add_argument("--caption_extention", type=str, default=None,
                         help="extension of caption file (for backward compatibility) / 出力されるキャプションファイルの拡張子（スペルミスしていたのを残してあります）")
     parser.add_argument("--caption_extension", type=str, default=".caption", help="extension of caption file / 出力されるキャプションファイルの拡張子")
-    parser.add_argument("--beam_search", action="store_true",
-                        help="use beam search (default Nucleus sampling) / beam searchを使う（このオプション未指定時はNucleus sampling）")
-    parser.add_argument("--batch_size", type=int, default=1, help="batch size in inference / 推論時のバッチサイズ")
+    parser.add_argument("--batch_size", type=int, default=3, help="batch size in inference / 推論時のバッチサイズ")
     parser.add_argument("--max_data_loader_n_workers", type=int, default=None,
                         help="enable image reading by DataLoader with this number of workers (faster) / DataLoaderによる画像読み込みを有効にしてこのワーカー数を適用する（読み込みを高速化）")
-    parser.add_argument("--num_beams", type=int, default=1, help="num of beams in beam search /beam search時のビーム数（多いと精度が上がるが時間がかかる）")
-    parser.add_argument("--top_p", type=float, default=0.9, help="top_p in Nucleus sampling / Nucleus sampling時のtop_p")
-    parser.add_argument("--max_length", type=int, default=75, help="max length of caption / captionの最大長")
+    parser.add_argument("--num_beams", type=int, default=5, help="num of beams in beam search /beam search時のビーム数（多いと精度が上がるが時間がかかる）")
+    parser.add_argument("--temperature", type=float, default=0.5, help="top_p in Nucleus sampling / Nucleus sampling時のtop_p")
+    parser.add_argument("--max_length", type=int, default=16, help="max length of caption / captionの最大長")
     parser.add_argument("--min_length", type=int, default=5, help="min length of caption / captionの最小長")
     parser.add_argument('--seed', default=42, type=int, help='seed for reproducibility / 再現性を確保するための乱数seed')
+    parser.add_argument('--no_repeat_ngram_size', default=3, type=int, help='')
+    parser.add_argument("--fp16", action="store_true", help="inference with fp16")
     parser.add_argument("--debug", action="store_true", help="debug mode")
 
     args = parser.parse_args([train_data_dir, 
@@ -112,8 +112,7 @@ def prepare_clean_parser(in_json,out_json):
     return args
 
 def prepare_bucket_parser(train_data_dir, in_json, out_json,
-                          model_name_or_path, upscale_model_dir, 
-                          model_name_or_path_v2=None,
+                          model_name_or_path, upscale_model_dir,
                           debug_dir=None, upscale_outscale=None, 
                           batch_size=None, flip_aug=False):
     parser = argparse.ArgumentParser()
@@ -124,8 +123,6 @@ def prepare_bucket_parser(train_data_dir, in_json, out_json,
     parser.add_argument("out_json", type=str,
                         help="metadata file to output / メタデータファイル書き出し先")
     parser.add_argument("model_name_or_path", type=str,
-                        help="model name or path to encode latents / latentを取得するためのモデル")
-    parser.add_argument("--model_name_or_path_v2", type=str, default=None,
                         help="model name or path to encode latents / latentを取得するためのモデル")
     parser.add_argument("--v2", action='store_true',
                         help='not used (for backward compatibility) / 使用されません（互換性のため残してあります）')
@@ -188,8 +185,6 @@ def prepare_bucket_parser(train_data_dir, in_json, out_json,
         s += ['--upscale_outscale', str(upscale_outscale)]
     if debug_dir:
         s += ['--debug_dir', debug_dir]
-    if model_name_or_path_v2:
-        s += ['--model_name_or_path_v2', model_name_or_path_v2]
     if batch_size:
         s += ['--batch_size', str(batch_size)]
     args = parser.parse_args(s)
@@ -326,11 +321,13 @@ def load_config_from_file(file_path):
     for key, value in config.items():
         exec(f"settings.{key}={value}")
         
-class jobContext(ContextDecorator):
-    def __enter__(self, job_name, file):
-        self.job_name = job_name
-        self.file = file
-        logger.info(f"[START] Stage: {job_name} File: {file}")
+class jobContext(dict ):
+    def __init__(self, **kwargs):
+        self.job_name = kwargs.get('job_name')
+        self.file = kwargs.get('file')
+
+    def __enter__(self, job_name="", file=""):
+        logger.info(f"[START] Stage: {self.job_name} File: {self.file}")
         return self
 
     def __exit__(self, *exc):
