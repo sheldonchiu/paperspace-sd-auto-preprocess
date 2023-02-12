@@ -322,6 +322,13 @@ def load_config_from_file(file_path):
     with open(file_path, 'r') as f:
         config = json.load(f)
     for key, value in config.items():
+        # best effort to load the custom value
+        original_value = getattr(settings, key, None)
+        if original_value and type(value) != type(original_value):
+            if type(original_value) == bool:
+                value = settings.bool_t(value)
+            else:
+                value = type(original_value)(value)
         setattr(settings, key, value)
         
 class jobContext(dict):
