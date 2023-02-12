@@ -108,7 +108,7 @@ def main():
                         merge_tag_extension = tag_extension
                     merge_arg = prepare_merge_parser(filter_dst, meta_file, merge_tag_extension)
                     merge_dd_tags_to_metadata.main(merge_arg)
-                    if settings.caption_using_blip:
+                    if settings.enable_caption:
                         merge_arg = prepare_merge_parser(filter_dst, meta_file, caption_extension)
                         merge_captions_to_metadata.main(merge_arg)
                 
