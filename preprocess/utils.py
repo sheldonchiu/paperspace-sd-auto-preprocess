@@ -48,7 +48,7 @@ def prepare_wd_parser(train_data_dir, thresh=0.35, batch_size=4, caption_extenti
     args = parser.parse_args([train_data_dir, 
                               '--thresh', str(thresh), 
                               '--batch_size',str(batch_size), 
-                              '--max_data_loader_n_workers', '4', 
+                              '--max_data_loader_n_workers', '0', 
                               '--caption_extension', caption_extention,
                               '--model_dir', '/tmp/wd14_tagger_model'])
     
@@ -76,7 +76,7 @@ def prepare_caption_parser(train_data_dir, batch_size=4, caption_extention='.cap
 
     args = parser.parse_args([train_data_dir, 
                               '--batch_size',str(batch_size), 
-                              '--max_data_loader_n_workers', '4',
+                              '--max_data_loader_n_workers', '0',
                               '--caption_extension', caption_extention])
     return args
 
