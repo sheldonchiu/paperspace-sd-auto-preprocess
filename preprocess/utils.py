@@ -325,10 +325,12 @@ def load_config_from_file(file_path):
         exec(f'settings.{key}="{value}"')
         
 class jobContext(dict):
+    
+    def __init__(self, **kwargs):
+        self.job_name = kwargs.get('job_name')
+        self.file = kwargs.get('file')
 
-    def __enter__(self, job_name="", file=""):
-        self.job_name = job_name
-        self.file = file
+    def __enter__(self):
         logger.info(f"[START] Stage: {self.job_name} File: {self.file}")
         return self
 
