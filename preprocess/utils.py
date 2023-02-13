@@ -317,7 +317,14 @@ def setup_logger(logger):
     # Add the handlers to the Logger
     logger.addHandler(discord_handler)
     logger.addHandler(stream_handler)
-    logger.setLevel(logging.INFO)
+    if settings.log_level == 'INFO':
+        logger.setLevel(logging.INFO)
+    elif settings.log_level == 'DEBUG':
+        logger.setLevel(logging.DEBUG)
+    elif settings.log_level == 'WARNING':
+        logger.setLevel(logging.WARNING)
+    elif settings.log_level == 'ERROR':
+        logger.setLevel(logging.ERROR)
     
 def load_config_from_file(file_path):
     with open(file_path, 'r') as f:

@@ -38,7 +38,7 @@ def main():
         
     signal.signal(signal.SIGINT, sigterm_handler)
     downloader = ProcessPoolExecutor(max_workers=1)
-    uploader = ProcessPoolExecutor(max_workers=1)
+    uploader = ProcessPoolExecutor(max_workers=2) # low chance of process randomly dead, set to 2 to avoid stuck for upload
     # fork will cause tf cudu init error, unknown reason
     context = multiprocessing.get_context('spawn')
     bucket_name = settings.s3_bucket_name

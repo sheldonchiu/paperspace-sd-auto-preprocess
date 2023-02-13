@@ -49,3 +49,4 @@ s3_bucket_name = os.environ.get('S3_BUCKET_NAME')
 s3_cache_bucket_name = os.environ.get('S3_CACHE_BUCKET_NAME')
 
 discord_webhook_url = os.environ.get('DISCORD_WEBHOOK_URL')
+log_level = os.environ.get('LOG_LEVEL', 'INFO')
