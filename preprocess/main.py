@@ -61,6 +61,7 @@ def main():
         # cache_result = None
         tag_extension = '.tag'
         caption_extension = '.caption'
+        meta_file = None
         local_path = osp.join(settings.data_download_path, osp.basename(file))
         if next(results) and (target_dir := extract(local_path)):
             try:
