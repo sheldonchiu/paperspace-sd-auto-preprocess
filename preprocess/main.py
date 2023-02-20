@@ -43,11 +43,14 @@ def main():
     context = multiprocessing.get_context('spawn')
     bucket_name = settings.s3_bucket_name
     files = get_list_of_files(bucket_name)
-    #0.tar.gz -> 0-result.tar.gz
     files_to_process = []
     for f in files:
         filename = f[:f.find('.')]
-        if 'result' not in f and f'{filename}-result.tar.gz' not in files:
+        if settings.use_result_as_input:
+            # if use previous result as input, 1. check if suffix matches 2. if is complete, skip
+            if settings.target_complete_suffix in f and f'{filename}-{settings.complete_suffix}.tar.gz' not in files:
+                files_to_process.append(f)
+        elif settings.complete_suffix not in f and f'{filename}-{settings.complete_suffix}.tar.gz' not in files:
             files_to_process.append(f)
             
     results = downloader.map(download_with_queue, [(bucket_name, f, osp.join(settings.data_download_path, osp.basename(f))) for f in files_to_process])
@@ -65,6 +68,8 @@ def main():
         local_path = osp.join(settings.data_download_path, osp.basename(file))
         if next(results) and (target_dir := extract(local_path)):
             try:
+                # move all files inside target_dir to top level for easier processing
+                flatten_folder(target_dir)
                 # reload setting to clean previous custom settings
                 importlib.reload(settings)
                 # load custom settings from config file in job zip
@@ -96,27 +101,28 @@ def main():
                         caption_args = prepare_caption_parser(filter_dst, batch_size=settings.caption_batch_size, caption_extention=caption_extension)
                         task = context.Process(target=make_captions_by_ofa.main, args=(caption_args,))
                         task.start(); task.join()
-                
-                with jobContext(job_name="merge", file=file):
-                    meta_file = osp.join(filter_dst,'meta_cap_dd.json')
-                    if settings.use_original_tags:
-                        merge_tag_extension = test_tag_extension(filter_dst, '.txt', tag_extension)
-                        if merge_tag_extension is None:
-                            logger.error("No tag file in source directory, unknow issue")
-                            raise Exception
-                    else:
-                        merge_tag_extension = tag_extension
-                    merge_arg = prepare_merge_parser(filter_dst, meta_file, merge_tag_extension)
-                    merge_dd_tags_to_metadata.main(merge_arg)
-                    if settings.enable_caption:
-                        merge_arg = prepare_merge_parser(filter_dst, meta_file, caption_extension)
-                        merge_captions_to_metadata.main(merge_arg)
-                
-                with jobContext(job_name="clean", file=file):
-                    clean_args = prepare_clean_parser(meta_file,meta_file)
-                    clean_captions_and_tags.main(clean_args)
+                if settings.use_original_tags or settings.tag_using_wd14 or settings.enable_caption:
+                    with jobContext(job_name="merge", file=file):
+                        meta_file = osp.join(filter_dst,'meta_cap_dd.json')
+                        if settings.use_original_tags:
+                            merge_tag_extension = test_tag_extension(filter_dst, '.txt', tag_extension)
+                            if merge_tag_extension is None:
+                                logger.error("No tag file in source directory, unknow issue")
+                                raise Exception
+                        else:
+                            merge_tag_extension = tag_extension
+                        merge_arg = prepare_merge_parser(filter_dst, meta_file, merge_tag_extension)
+                        merge_dd_tags_to_metadata.main(merge_arg)
+                        if settings.enable_caption:
+                            merge_arg = prepare_merge_parser(filter_dst, meta_file, caption_extension)
+                            merge_captions_to_metadata.main(merge_arg)
+                    
+                    with jobContext(job_name="clean", file=file):
+                        clean_args = prepare_clean_parser(meta_file,meta_file)
+                        clean_captions_and_tags.main(clean_args)
                 
                 with jobContext(job_name="bucket", file=file):
+                    # if json file doesn't exist, prepare buckets will run without it, so not making any change here
                     lat_file = osp.join(filter_dst,'meta_lat.json')
                     bucket_args = prepare_bucket_parser(filter_dst, meta_file, lat_file, sd_model_path, 
                                                         osp.join(settings.model_path, 'upscaler') if settings.enable_upscaler else None, 
@@ -131,11 +137,14 @@ def main():
                     task.join()
                     # Path.touch(osp.join(filter_dst, 'complete'))
                     # wait(cache_result)
-                
+                    
+                if not settings.save_original_img:
+                    remove_images_from_folder(filter_dst)
+                    
                 folders_to_compress = [filter_dst]
                 if debug_dir:
                     folders_to_compress += [debug_dir]
-                output_path = f"{target_dir}-result.tar.gz"
+                output_path = f"{target_dir}-{settings.complete_suffix}.tar.gz"
                 
                 uploader.submit(compress_and_upload, folders_to_compress, output_path, bucket_name)
                     

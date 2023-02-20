@@ -11,7 +11,6 @@ from tqdm.auto import tqdm
 import time
 from pathlib import Path
 import json
-from contextlib import ContextDecorator
 
 logger = logging.getLogger(__name__)
 try:
@@ -21,14 +20,14 @@ except:
 
 DEFAULT_WD14_TAGGER_REPO = 'SmilingWolf/wd-v1-4-convnext-tagger-v2'
 
-def get_s3_connection():
+def get_s3_connection() -> Minio:
     return Minio(
             settings.s3_endpoint_url,
             access_key=settings.s3_aws_access_key_id,
             secret_key=settings.s3_aws_secret_access_key,
         )
 
-def prepare_wd_parser(train_data_dir, thresh=0.35, batch_size=4, caption_extention='.txt'):
+def prepare_wd_parser(train_data_dir: str, thresh: float=0.35, batch_size: int=4, caption_extention: str='.txt') -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
     parser.add_argument("--repo_id", type=str, default=DEFAULT_WD14_TAGGER_REPO,
@@ -54,7 +53,7 @@ def prepare_wd_parser(train_data_dir, thresh=0.35, batch_size=4, caption_extenti
     
     return args
 
-def prepare_caption_parser(train_data_dir, batch_size=4, caption_extention='.caption'):
+def prepare_caption_parser(train_data_dir: str, batch_size: int = 4, caption_extention: str = '.caption') -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
     parser.add_argument("--caption_weights", type=str, default="https://huggingface.co/sheldonxxxx/ofa_for_repo/resolve/main/caption_huge_best.pt",
@@ -80,7 +79,7 @@ def prepare_caption_parser(train_data_dir, batch_size=4, caption_extention='.cap
                               '--caption_extension', caption_extention])
     return args
 
-def prepare_merge_parser(train_data_dir, out_json, caption_extension, in_json=None, recursive=False):
+def prepare_merge_parser(train_data_dir: str, out_json: str, caption_extension: str, in_json: str=None, recursive: bool=False) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
     parser.add_argument("out_json", type=str, help="metadata file to output / メタデータファイル書き出し先")
@@ -102,7 +101,7 @@ def prepare_merge_parser(train_data_dir, out_json, caption_extension, in_json=No
     args = parser.parse_args(params)
     return args
 
-def prepare_clean_parser(in_json,out_json):
+def prepare_clean_parser(in_json: str,out_json: str) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     # parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
     parser.add_argument("in_json", type=str, help="metadata file to input / 読み込むメタデータファイル")
@@ -112,10 +111,10 @@ def prepare_clean_parser(in_json,out_json):
     args = parser.parse_args([in_json, out_json])
     return args
 
-def prepare_bucket_parser(train_data_dir, in_json, out_json,
-                          model_name_or_path, upscale_model_dir,
-                          debug_dir=None, upscale_outscale=None, 
-                          batch_size=None, flip_aug=False):
+def prepare_bucket_parser(train_data_dir: str, in_json: str, out_json: str,
+                          model_name_or_path: str, upscale_model_dir: str,
+                          debug_dir: str=None, upscale_outscale: int=None, 
+                          batch_size: int=None, flip_aug: bool=False) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_dir", type=str,
                         help="directory for train images / 学習画像データのディレクトリ")
@@ -276,10 +275,17 @@ def extract(file):
         with open(new_file, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     with tarfile.open(new_file) as f:
-        f.extractall(settings.data_download_path)
-    os.remove(new_file)
+        f.extractall(target_dir)
+        
     Path(complete_mark).touch()
+    os.remove(new_file)
     return target_dir
+
+def flatten_folder(folder: str) -> None:
+    for file_path in Path(folder).rglob('*'):
+        if file_path.is_file():
+            new_file_path = Path(folder) / file_path.name
+            shutil.move(file_path, new_file_path)    
 
 def compress_and_upload(members, output_filename, bucketName):
     target_file = osp.basename(output_filename)
@@ -367,7 +373,14 @@ def cache_progress_watcher(bucket_name, target_dir, key, file_extension, recursi
         time.sleep(interval)
     
     os.remove(complete_mark)
-        
+    
+def remove_images_from_folder(folder):
+    images = []
+    image_format = ['.jpeg','.jpg', '.png', '.webp']
+    for i in image_format:
+        images += glob(osp.join(folder, f"*{i}"))
+    for image in images:
+        os.remove(image)
         
 # config = {"use_original_tags": "0"}
 # with open("config.json", 'w') as f:
