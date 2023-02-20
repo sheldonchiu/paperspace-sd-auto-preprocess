@@ -32,10 +32,6 @@ def sigterm_handler(_signo, _stack_frame):
     sys.exit(0)
     
 def main():
-    if not settings.use_original_tags and not settings.tag_using_wd14:
-        logger.error("cannot disable wd14 tagger and not use original tags")
-        sys.exit(-1)
-        
     signal.signal(signal.SIGINT, sigterm_handler)
     downloader = ProcessPoolExecutor(max_workers=1)
     uploader = ProcessPoolExecutor(max_workers=2) # low chance of process randomly dead, set to 2 to avoid stuck for upload
@@ -70,6 +66,8 @@ def main():
             try:
                 # move all files inside target_dir to top level for easier processing
                 flatten_folder(target_dir)
+                if settings.use_result_as_input:
+                    remove_old_files(target_dir)
                 # reload setting to clean previous custom settings
                 importlib.reload(settings)
                 # load custom settings from config file in job zip

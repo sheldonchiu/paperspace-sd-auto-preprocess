@@ -1,5 +1,4 @@
 # %%
-from utils import *
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.firefox import GeckoDriverManager
@@ -19,6 +18,7 @@ logging.basicConfig(level=logging.INFO)
 
 # %%
 load_dotenv()
+from utils import *
 # %%
 project_id = os.environ['PROJECT_ID']
 bucket_name = os.environ['S3_BUCKET_NAME']

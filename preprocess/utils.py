@@ -373,10 +373,17 @@ def cache_progress_watcher(bucket_name, target_dir, key, file_extension, recursi
         time.sleep(interval)
     
     os.remove(complete_mark)
+
+image_format = ['.jpeg','.jpg', '.png', '.webp']
+def remove_old_files(folder):
+    file_format = ['.npz','.tag', '.caption']
+    for file_path in Path(folder).rglob('*'):
+        ext = Path(file_path).suffix
+        if ext in file_format:
+            os.remove(file_path)
     
 def remove_images_from_folder(folder):
     images = []
-    image_format = ['.jpeg','.jpg', '.png', '.webp']
     for i in image_format:
         images += glob(osp.join(folder, f"*{i}"))
     for image in images:
