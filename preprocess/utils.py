@@ -378,9 +378,12 @@ image_format = ['.jpeg','.jpg', '.png', '.webp']
 def remove_old_files(folder):
     file_format = ['.npz','.tag', '.caption']
     for file_path in Path(folder).rglob('*'):
-        ext = Path(file_path).suffix
-        if ext in file_format:
-            os.remove(file_path)
+        if file_path.is_dir():
+            shutil.rmtree(file_path)
+        else:
+            ext = Path(file_path).suffix
+            if ext in file_format:
+                os.remove(file_path)
     
 def remove_images_from_folder(folder):
     images = []
