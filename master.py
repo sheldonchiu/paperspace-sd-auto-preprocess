@@ -28,6 +28,7 @@ exception_sleep_interval = 60 * 5
 gpu_wait_interval = 60
 running_sleep_interval = 60 * 10
 notebook_base_url = "https://{}.{}.paperspacegradient.com?token={}"
+extra_env = [e for e in os.environ.keys() if 'ENV_' in e]
 
 options = Options()
 # if(headless):
@@ -108,6 +109,7 @@ while True:
                         "S3_BUCKET_NAME": os.environ['S3_BUCKET_NAME'],
                         "COMPLETE_SUFFIX": complete_suffix
                     }
+                    environment.update({e.replace('ENV_', ''): os.environ[e] for e in extra_env})
                     # optional environment variables
                     discord_webhook_url = os.environ.get(
                         'DISCORD_WEBHOOK_URL', None)
