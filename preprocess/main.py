@@ -72,7 +72,8 @@ def main():
                 importlib.reload(settings)
                 # load custom settings from config file in job zip
                 config_file_path = osp.join(target_dir, "config.json")
-                load_config_from_file(config_file_path)
+                if osp.exists(config_file_path):
+                    load_config_from_file(config_file_path)
                 
                 filter_dst = f"{target_dir}_filter" if settings.enable_filter else target_dir
                 debug_dir = f"{target_dir}_debug" if settings.save_img_for_debug else None
