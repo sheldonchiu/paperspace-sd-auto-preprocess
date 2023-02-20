@@ -217,7 +217,7 @@ def check_work_queue():
     files_to_process = []
     for f in files:
         filename = f[:f.find('.')]
-        if 'result' not in f and f'{filename}-result.tar.gz' not in files:
+        if settings.complete_suffix not in f and f'{filename}-{settings.complete_suffix}.tar.gz' not in files:
             files_to_process.append(f)
     return len(files_to_process)
 
