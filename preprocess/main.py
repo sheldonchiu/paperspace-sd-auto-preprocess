@@ -44,7 +44,7 @@ def main():
         filename = f[:f.find('.')]
         if settings.use_result_as_input:
             # if use previous result as input, 1. check if suffix matches 2. if is complete, skip
-            if settings.target_complete_suffix in f and f'{filename}-{settings.complete_suffix}.tar.gz' not in files:
+            if f"-{settings.target_complete_suffix}-" in f and f'{filename}-{settings.complete_suffix}.tar.gz' not in files:
                 files_to_process.append(f)
         elif settings.complete_suffix not in f and f'{filename}-{settings.complete_suffix}.tar.gz' not in files:
             files_to_process.append(f)
