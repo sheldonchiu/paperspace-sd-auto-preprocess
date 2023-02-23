@@ -264,21 +264,29 @@ def compress(members, output_filename):
     os.system(command)
 
 def extract(file):
-    target_dir = file[:file.find('.')]
-    complete_mark = target_dir + ".complete"
-    if settings.skip_extract or osp.isfile(complete_mark):
-        return target_dir
-    
-    logger.info(f"Start to extract {file}")
-    with gzip.open(file, 'rb') as f_in:
-        new_file = file.replace('.gz','')
-        with open(new_file, 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
-    with tarfile.open(new_file) as f:
-        f.extractall(target_dir)
+    try:
+        target_dir = file[:file.find('.')]
+        complete_mark = target_dir + ".complete"
+        if settings.skip_extract or osp.isfile(complete_mark):
+            return target_dir
         
-    Path(complete_mark).touch()
-    os.remove(new_file)
+        logger.info(f"Start to extract {file}")
+        with gzip.open(file, 'rb') as f_in:
+            new_file = file.replace('.gz','')
+            with open(new_file, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        with tarfile.open(new_file) as f:
+            f.extractall(target_dir)
+            
+        Path(complete_mark).touch()
+        os.remove(new_file)
+    except:
+        logger.error(f"Extract failed for file {file}")
+        target_dir = False
+        if osp.isfile(file):
+            os.remove(file)
+        if osp.isfile(new_file):
+            os.remove(new_file)
     return target_dir
 
 def flatten_folder(folder: str) -> None:
