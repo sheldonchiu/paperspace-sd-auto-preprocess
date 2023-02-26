@@ -346,7 +346,7 @@ def load_config_from_file(file_path):
     for key, value in config.items():
         # best effort to load the custom value
         original_value = getattr(settings, key, None)
-        if original_value and type(value) != type(original_value):
+        if original_value is not None and type(value) != type(original_value):
             if type(original_value) == bool:
                 value = settings.bool_t(value)
             else:
