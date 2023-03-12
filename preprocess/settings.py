@@ -44,7 +44,7 @@ filter_waifu_thresh = float(os.environ.get('FILTER_WAIFU_THRESH', 0.6))
 
 main_loop_interval = int(os.environ.get('MAIN_LOOP_INTERVAL', 60*5))
 
-vae_model_url = os.environ.get("VAE_MODEL_URL", "https://huggingface.co/sheldonxxxx/mecha-sd15-lora/resolve/main/mecha_v2_e3-pruned.ckpt")
+vae_model_url = os.environ.get("VAE_MODEL_URL", "https://huggingface.co/sheldonxxxx/mecha-vae/resolve/main/mecha_v2_e3-pruned.ckpt")
 vae_model_hub = os.environ.get("VAE_MODEL_HUB",None)
 
 s3_endpoint_url = os.environ.get('S3_HOST_URL')
