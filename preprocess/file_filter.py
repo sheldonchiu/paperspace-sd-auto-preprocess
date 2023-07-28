@@ -19,7 +19,7 @@ image_format = ['jpeg','jpg', 'png', 'webp']
 
 #%%
 search_exclude_pairs = [
-    (['mecha', 'robot', 'mecha_musume'], ['girl', 'boy']),
+    (['mecha', 'robot', 'mecha musume'], ['girl', 'boy']),
     (None, ['sensitive', 'explicit'])
 ]
 quality = ["worst quality"] * 21 + ["low quality"] * 30 + \
@@ -49,7 +49,7 @@ def imgFilter(tag):
         if has_search_words and not has_exclude_words:
             include = True 
         elif has_search_words and has_exclude_words:
-            include = True
+            include = False
         elif has_search_words is None and has_exclude_words:
             include = False
     # If none of the search conditions are met, return False

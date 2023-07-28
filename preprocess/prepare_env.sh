@@ -10,14 +10,23 @@ if [ ! -d $root_path/$repo_name ]; then
 fi
 
 cd $root_path/$repo_name
+git checkout sdxl
 
 echo "Installing Dependencies"
-apt-get update && apt-get install -y build-essential git libgl1 libglib2.0-0 aria2 pigz
-pip install -U pip
-pip install protobuf==3.20.3
-pip install -r requirements.txt
-pip install realesrgan minio python-logging-discord-handler triton==2.0.0.dev20230208
-pip install xformers==0.0.17.dev447
+apt-get update -qq
+apt-get install -qq build-essential git libgl1 libglib2.0-0 aria2 pigz python3.10 python3.10-venv python3.10-dev  -y > /dev/null
+
+python3 -m venv /tmp/preprocess-env
+source /tmp/preprocess-env/bin/activate
+
+pip install --upgrade pip
+pip install --upgrade wheel setuptools
+
+pip3 install -U torch torchvision torchaudio
+pip install --upgrade -r requirements.txt
+pip install realesrgan minio python-logging-discord-handler
+pip install xformers==0.0.20 protobuf==3.20.3
+pip install --upgrade bitsandbytes
 
 # mkdir -p /tmp/stable-diffusion/
 
