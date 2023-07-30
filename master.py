@@ -103,11 +103,12 @@ while True:
                 try:
                     # required environment variables
                     environment = {
-                        "S3_HOST_URL": os.environ['S3_HOST_URL_EXT'],
+                        "S3_HOST_URL": os.environ['S3_HOST_URL'],
                         "S3_ACCESS_KEY": os.environ['S3_ACCESS_KEY'],
                         "S3_SECRET_KEY": os.environ['S3_SECRET_KEY'],
                         "S3_BUCKET_NAME": os.environ['S3_BUCKET_NAME'],
-                        "COMPLETE_SUFFIX": complete_suffix
+                        "COMPLETE_SUFFIX": complete_suffix,
+                        "RUN_SCRIPT": "kosmos2,preprocess",
                     }
                     environment.update({e.replace('ENV_', ''): os.environ[e] for e in extra_env})
                     # optional environment variables
@@ -118,12 +119,12 @@ while True:
 
                     notebook_id = notebooks_client.create(
                         machine_type=gpu,
-                        container='paperspace/gradient-base:pt112-tf29-jax0314-py39-20220803',
+                        container='paperspace/gradient-base:pt112-tf29-jax0317-py39-20230125',
                         project_id=project_id,
                         name='auto',
-                        command="PIP_DISABLE_PIP_VERSION_CHECK=1 bash /notebooks/preprocess/run.sh >> /tmp/run.log 2>&1 & jupyter lab --allow-root --ip=0.0.0.0 --no-browser --ServerApp.trust_xheaders=True --ServerApp.disable_check_xsrf=False --ServerApp.allow_remote_access=True --ServerApp.allow_origin='*' --ServerApp.allow_credentials=True",
+                        command="bash entry.sh >> /tmp/run.log & jupyter lab --allow-root --ip=0.0.0.0 --no-browser --ServerApp.trust_xheaders=True --ServerApp.disable_check_xsrf=False --ServerApp.allow_remote_access=True --ServerApp.allow_origin='*' --ServerApp.allow_credentials=True",
                         shutdown_timeout="6",
-                        workspace="https://github.com/sheldonchiu/paperspace-sd-auto-preprocess.git",
+                        workspace="https://github.com/sheldonchiu/Ultimate-Paperspace-Template.git",
                         environment=environment
                     )
                     logging.info("Notebook successfully started")

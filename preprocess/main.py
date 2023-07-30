@@ -84,7 +84,7 @@ def main():
                 if debug_dir is not None:
                     os.makedirs(debug_dir, exist_ok=True)
                     
-                if not settings.use_original_tags and settings.tag_using_wd14:
+                if  settings.tag_using_wd14:
                     with jobContext(job_name="tag", file=file):
                     # create tag using wd14 and storing with .tag extension in the same directory
                         wd_args = prepare_wd_parser(target_dir, thresh=settings.wd14_thresh, batch_size=settings.wd14_batch_size, caption_extention=tag_extension)
