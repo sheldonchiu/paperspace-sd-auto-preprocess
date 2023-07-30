@@ -103,7 +103,7 @@ while True:
                 try:
                     # required environment variables
                     environment = {
-                        "S3_HOST_URL": os.environ['S3_HOST_URL'],
+                        "S3_HOST_URL": os.environ['S3_HOST_URL_EXT'],
                         "S3_ACCESS_KEY": os.environ['S3_ACCESS_KEY'],
                         "S3_SECRET_KEY": os.environ['S3_SECRET_KEY'],
                         "S3_BUCKET_NAME": os.environ['S3_BUCKET_NAME'],
