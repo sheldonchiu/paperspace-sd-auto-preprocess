@@ -153,10 +153,10 @@ if __name__ == "__main__":
     parser.add_argument('--image_path', type=str, help='Path to the data')
     parser.add_argument('--output_path', type=str, help='Path to the output')
     parser.add_argument('--split_by', type=int, default=2000, help='Number of items to split the data into')
-    parser.add_argument('--screenshot', action='store_false', help='Flag to indicate whether is screenshot')
+    parser.add_argument('--screenshot', action='store_true', help='Flag to indicate whether is screenshot')
     parser.add_argument('--source', type=str, default='', help='image source')
     parser.add_argument('--wd14_thresh', type=float, default=0.35, help='Threshold value for wd14')
-    parser.add_argument('--custom_tags', type=str, default=None, help='Custom tags for the data')
+    parser.add_argument('--custom_tags', type=str, default="", help='Custom tags for the data')
     parser.add_argument('--bucket_name', type=str, default='queue-1', help='Name of the bucket')
     parser.add_argument('--interactive', action='store_true', help='interactive mode')
 
