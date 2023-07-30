@@ -157,84 +157,75 @@ def prepare_clean_parser(in_json: str,out_json: str) -> argparse.ArgumentParser:
     return args
 
 def prepare_bucket_parser(train_data_dir: str, in_json: str, out_json: str,
-                          model_name_or_path: str, upscale_model_dir: str,
-                          debug_dir: str=None, upscale_outscale: int=None, 
+                          model_name_or_path: str, resolution: str,
+                          debug_dir: str=None, mixed_precision:str=None,
                           batch_size: int=None, flip_aug: bool=False) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("train_data_dir", type=str,
-                        help="directory for train images / 学習画像データのディレクトリ")
-    parser.add_argument("in_json", type=str,
-                        help="metadata file to input / 読み込むメタデータファイル")
-    parser.add_argument("out_json", type=str,
-                        help="metadata file to output / メタデータファイル書き出し先")
-    parser.add_argument("model_name_or_path", type=str,
-                        help="model name or path to encode latents / latentを取得するためのモデル")
-    parser.add_argument("--v2", action='store_true',
-                        help='not used (for backward compatibility) / 使用されません（互換性のため残してあります）')
-    parser.add_argument("--batch_size", type=int, default=1,
-                        help="batch size in inference / 推論時のバッチサイズ")
-    parser.add_argument("--max_data_loader_n_workers", type=int, default=None,
-                    help="enable image reading by DataLoader with this number of workers (faster) / DataLoaderによる画像読み込みを有効にしてこのワーカー数を適用する（読み込みを高速化）")
-    parser.add_argument("--max_resolution", type=str, default="768,768",
-                        help="max resolution in fine tuning (width,height) / fine tuning時の最大画像サイズ 「幅,高さ」（使用メモリ量に関係します）")
+    parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
+    parser.add_argument("in_json", type=str, help="metadata file to input / 読み込むメタデータファイル")
+    parser.add_argument("out_json", type=str, help="metadata file to output / メタデータファイル書き出し先")
+    parser.add_argument("model_name_or_path", type=str, help="model name or path to encode latents / latentを取得するためのモデル")
+    parser.add_argument("--v2", action="store_true", help="not used (for backward compatibility) / 使用されません（互換性のため残してあります）")
+    parser.add_argument("--batch_size", type=int, default=1, help="batch size in inference / 推論時のバッチサイズ")
+    parser.add_argument(
+        "--max_data_loader_n_workers",
+        type=int,
+        default=None,
+        help="enable image reading by DataLoader with this number of workers (faster) / DataLoaderによる画像読み込みを有効にしてこのワーカー数を適用する（読み込みを高速化）",
+    )
+    parser.add_argument(
+        "--max_resolution",
+        type=str,
+        default="512,512",
+        help="max resolution in fine tuning (width,height) / fine tuning時の最大画像サイズ 「幅,高さ」（使用メモリ量に関係します）",
+    )
     parser.add_argument("--min_bucket_reso", type=int, default=256, help="minimum resolution for buckets / bucketの最小解像度")
     parser.add_argument("--max_bucket_reso", type=int, default=1024, help="maximum resolution for buckets / bucketの最小解像度")
-    parser.add_argument("--bucket_reso_steps", type=int, default=64,
-                        help="steps of resolution for buckets, divisible by 8 is recommended / bucketの解像度の単位、8で割り切れる値を推奨します")
-    parser.add_argument("--bucket_no_upscale", action="store_true",
-                        help="make bucket for each image without upscaling / 画像を拡大せずbucketを作成します")
-    parser.add_argument("--mixed_precision", type=str, default="no",
-                        choices=["no", "fp16", "bf16"], help="use mixed precision / 混合精度を使う場合、その精度")
-    parser.add_argument("--full_path", action="store_true",
-                        help="use full path as image-key in metadata (supports multiple directories) / メタデータで画像キーをフルパスにする（複数の学習画像ディレクトリに対応）")
-    parser.add_argument("--flip_aug", action="store_true",
-                        help="flip augmentation, save latents for flipped images / 左右反転した画像もlatentを取得、保存する")
-    parser.add_argument("--upscale", action="store_true",
-                        help="upscale before resize")
     parser.add_argument(
-        '--upscale_model_name',
-        type=str,
-        default='RealESRGAN_x4plus_anime_6B',
-        help=('Model names: RealESRGAN_x4plus | RealESRNet_x4plus | RealESRGAN_x4plus_anime_6B | RealESRGAN_x2plus | '
-                'realesr-animevideov3 | realesr-general-x4v3'))
-    parser.add_argument('--upscale_outscale', type=int, default=2,
-                        help='')
+        "--bucket_reso_steps",
+        type=int,
+        default=64,
+        help="steps of resolution for buckets, divisible by 8 is recommended / bucketの解像度の単位、8で割り切れる値を推奨します",
+    )
     parser.add_argument(
-        '--upscale_denoise_strength',
-        type=float,
-        default=0.5,
-        help=('Denoise strength. 0 for weak denoise (keep noise), 1 for strong denoise ability. '
-            'Only used for the realesr-general-x4v3 model'))
+        "--bucket_no_upscale", action="store_true", help="make bucket for each image without upscaling / 画像を拡大せずbucketを作成します"
+    )
     parser.add_argument(
-        '--upscale_model_dir', type=str, default='upscale', help='[Option] Model path.')
-    parser.add_argument('--upscale_tile', type=int, default=512,
-                        help='Tile size, 0 for no tile during testing')
-    parser.add_argument('--upscale_tile_pad', type=int,
-                        default=10, help='Tile padding')
-    parser.add_argument('--upscale_pre_pad', type=int,
-                        default=0, help='Pre padding size at each border')
-    parser.add_argument("--upscale_enable_reso", type=int, default=1000*1000,
-                        help="Images with resolution(w*h) below this will upscale before resize, if upsacle is enabled")
+        "--mixed_precision", type=str, default="no", choices=["no", "fp16", "bf16"], help="use mixed precision / 混合精度を使う場合、その精度"
+    )
     parser.add_argument(
-        '--debug_dir', type=str, default=None, help='')  
-    parser.add_argument("--skip_existing", action="store_true",
-                    help="skip images if npz already exists (both normal and flipped exists if flip_aug is enabled) / npzが既に存在する画像をスキップする（flip_aug有効時は通常、反転の両方が存在する画像をスキップ）")
-
+        "--full_path",
+        action="store_true",
+        help="use full path as image-key in metadata (supports multiple directories) / メタデータで画像キーをフルパスにする（複数の学習画像ディレクトリに対応）",
+    )
+    parser.add_argument(
+        "--flip_aug", action="store_true", help="flip augmentation, save latents for flipped images / 左右反転した画像もlatentを取得、保存する"
+    )
+    parser.add_argument(
+        "--skip_existing",
+        action="store_true",
+        help="skip images if npz already exists (both normal and flipped exists if flip_aug is enabled) / npzが既に存在する画像をスキップする（flip_aug有効時は通常、反転の両方が存在する画像をスキップ）",
+    )
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        help="recursively look for training tags in all child folders of train_data_dir / train_data_dirのすべての子フォルダにある学習タグを再帰的に探す",
+    )
     s = [   train_data_dir, 
             in_json,out_json,
             model_name_or_path,
             '--skip_existing',
         ]
-    if upscale_model_dir:
-        s+= ['--upscale', '--upscale_model_dir', upscale_model_dir]
+    if resolution:
+        s += ['--max_resolution', resolution]
     if flip_aug:
         s += ['--flip_aug']
-    if upscale_outscale:
-        s += ['--upscale_outscale', str(upscale_outscale)]
     if debug_dir:
         s += ['--debug_dir', debug_dir]
     if batch_size:
         s += ['--batch_size', str(batch_size)]
+    if mixed_precision:
+        s += ['--mixed_precision', mixed_precision]
     args = parser.parse_args(s)
 
     return args

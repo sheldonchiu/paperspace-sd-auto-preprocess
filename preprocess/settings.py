@@ -2,7 +2,8 @@ import sys
 import os
 from os import path as osp
 
-path_to_repo = "/notebooks/kohya-trainer-paperspace"
+root_dir = os.environ.get('ROOT_DIR', '/tmp')
+path_to_repo = f"{root_dir}/kohya-trainer-paperspace"
 if osp.join(path_to_repo,'finetune') not in sys.path:
     sys.path.append(osp.join(path_to_repo,'finetune'))
 
@@ -22,6 +23,9 @@ tag_using_wd14 = bool_t(os.environ.get('TAG_USING_WD14', '1'))
 wd14_thresh = float(os.environ.get('WD14_THRESHOLD', 0.35))
 wd14_batch_size = int(os.environ.get('WD14_BATCH_SIZE', 4))
 enable_caption = bool_t(os.environ.get('ENABLE_CAPTION', '1'))
+caption_type = os.environ.get('CAPTION_TYPE', 'ofa')
+kosmos2_env_path = os.environ.get('KOSMOS2_ENV_PATH', '/tmp/kosmos2-env')
+kosmos2_script_path = os.environ.get('KOSMOS2_SCRIPT_PATH', '/storage/unilm/kosmos-2/demo')
 caption_batch_size = int(os.environ.get('CAPTION_BATCH_SIZE', 16))
 use_original_tags = bool_t(os.environ.get('USE_ORIGINAL_TAGS', '0'))
 enable_filter = bool_t(os.environ.get('ENABLE_FILTER', '1'))
@@ -29,8 +33,8 @@ filter_using_cafe_aesthetic = bool_t(os.environ.get('FILTER_USING_CAFE', '1'))
 save_img_for_debug = bool_t(os.environ.get('SAVE_IMG_FOR_DEBUG', '0'))
 save_original_img = bool_t(os.environ.get('SAVE_ORIGINAL_IMG','1'))
 
-enable_upscaler = bool_t(os.environ.get('ENABLE_UPSCALER', '1'))
-upscale_outscale = int(os.environ.get('UPSCALE_OUTSCALE', 2))
+bucketing_resolution=os.environ.get('BUCKETING_RESOLUTION', '1024,1024')
+bucketing_mixed_precision = os.environ.get('BUCKETING_MIXED_PRECISION', 'fp16')
 bucketing_batch_szie = int(os.environ.get('BUCKETING_BATCH_SIZE', 2))
 bucketing_flip_aug = bool_t(os.environ.get('BUCKETING_FLIP_AUG', '0'))
 

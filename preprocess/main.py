@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import os.path as osp
+from pathlib import Path
 
 # will add path to kohya trainer in settings
 import logging
@@ -9,6 +10,7 @@ from utils import *
 logger = logging.getLogger()
 setup_logger(logger)
 
+import subprocess
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, wait
 from multiprocessing import active_children
@@ -98,9 +100,23 @@ def main():
                     
                 if settings.enable_caption:
                     with jobContext(job_name="caption", file=file):
-                        caption_args = prepare_caption_parser(filter_dst, batch_size=settings.caption_batch_size, caption_extention=caption_extension)
-                        task = context.Process(target=make_captions_by_ofa.main, args=(caption_args,))
-                        task.start(); task.join()
+                        if settings.caption_type == 'ofa':
+                            caption_args = prepare_caption_parser(filter_dst, batch_size=settings.caption_batch_size, caption_extention=caption_extension)
+                            task = context.Process(target=make_captions_by_ofa.main, args=(caption_args,))
+                            task.start(); task.join()
+                        elif settings.caption_type == 'kosmos2':
+                            venv_path = Path(settings.kosmos2_env_path) / "bin/activate"
+                            process = subprocess.Popen([f'source {venv_path}', '&&', 
+                                                        'python', 'batch.py'], 
+                                                       cwd=settings.kosmos2_script_path,
+                                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            stdout, stderr = process.communicate()
+                            if process.returncode == 0:
+                                logger.info(stdout.decode('utf-8'))
+                            else:
+                                logger.error(stderr.decode('utf-8'))
+                                raise Exception
+                            
                 if settings.use_original_tags or settings.tag_using_wd14 or settings.enable_caption:
                     with jobContext(job_name="merge", file=file):
                         meta_file = osp.join(filter_dst,'meta_cap_dd.json')
@@ -124,10 +140,10 @@ def main():
                 with jobContext(job_name="bucket", file=file):
                     # if json file doesn't exist, prepare buckets will run without it, so not making any change here
                     lat_file = osp.join(filter_dst,'meta_lat.json')
-                    bucket_args = prepare_bucket_parser(filter_dst, meta_file, lat_file, sd_model_path, 
-                                                        osp.join(settings.model_path, 'upscaler') if settings.enable_upscaler else None, 
+                    bucket_args = prepare_bucket_parser(filter_dst, meta_file, lat_file, sd_model_path,  
                                                         debug_dir=debug_dir,
-                                                        upscale_outscale=settings.upscale_outscale,
+                                                        resolution=settings.bucketing_resolution,
+                                                        mixed_precision=settings.bucketing_mixed_precision,
                                                         batch_size=settings.bucketing_batch_szie,
                                                         flip_aug=settings.bucketing_flip_aug
                                                         )
