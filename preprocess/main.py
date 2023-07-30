@@ -105,10 +105,9 @@ def main():
                         #     task = context.Process(target=make_captions_by_ofa.main, args=(caption_args,))
                         #     task.start(); task.join()
                         # elif settings.caption_type == 'kosmos2':
-                        venv_path = Path(settings.kosmos2_env_path) / "bin/activate"
-                        process = subprocess.Popen([f'source {venv_path}', '&&', 
-                                                    'python', 'batch.py'], 
-                                                    cwd=settings.kosmos2_script_path,
+                        process = subprocess.Popen( ["/bin/bash", "run_kosmos_caption.sh", 
+                                                     filter_dst, filter_dst],
+                                                    cwd=osp.dirname(osp.abspath(__file__)),
                                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                         stdout, stderr = process.communicate()
                         if process.returncode == 0:

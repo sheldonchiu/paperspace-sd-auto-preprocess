@@ -118,7 +118,7 @@ def main(src_path, dst_path, tag_extension, caption_extension, filter_using_cafe
             add_custom_tag(item['tag_src'], quality[int(score['aesthetic'] * 100)])
     
     for idx, item in enumerate(output):
-        if hasattr(settings, "custom_tags"):
+        if hasattr(settings, "custom_tags") and settings.custom_tags is not None:
             add_custom_tag(item['tag_src'], settings.custom_tags)
         imgFile = item['img_src']
         img_dst = osp.join(dst_path, osp.basename(imgFile))
