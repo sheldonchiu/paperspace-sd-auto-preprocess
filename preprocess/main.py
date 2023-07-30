@@ -19,7 +19,7 @@ import settings
 import importlib
 
 import file_filter
-import make_captions_by_ofa
+# import make_captions_by_ofa
 import tag_images_by_wd14_tagger
 import merge_dd_tags_to_metadata
 import merge_captions_to_metadata
@@ -100,22 +100,22 @@ def main():
                     
                 if settings.enable_caption:
                     with jobContext(job_name="caption", file=file):
-                        if settings.caption_type == 'ofa':
-                            caption_args = prepare_caption_parser(filter_dst, batch_size=settings.caption_batch_size, caption_extention=caption_extension)
-                            task = context.Process(target=make_captions_by_ofa.main, args=(caption_args,))
-                            task.start(); task.join()
-                        elif settings.caption_type == 'kosmos2':
-                            venv_path = Path(settings.kosmos2_env_path) / "bin/activate"
-                            process = subprocess.Popen([f'source {venv_path}', '&&', 
-                                                        'python', 'batch.py'], 
-                                                       cwd=settings.kosmos2_script_path,
-                                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                            stdout, stderr = process.communicate()
-                            if process.returncode == 0:
-                                logger.info(stdout.decode('utf-8'))
-                            else:
-                                logger.error(stderr.decode('utf-8'))
-                                raise Exception
+                        # if settings.caption_type == 'ofa':
+                        #     caption_args = prepare_caption_parser(filter_dst, batch_size=settings.caption_batch_size, caption_extention=caption_extension)
+                        #     task = context.Process(target=make_captions_by_ofa.main, args=(caption_args,))
+                        #     task.start(); task.join()
+                        # elif settings.caption_type == 'kosmos2':
+                        venv_path = Path(settings.kosmos2_env_path) / "bin/activate"
+                        process = subprocess.Popen([f'source {venv_path}', '&&', 
+                                                    'python', 'batch.py'], 
+                                                    cwd=settings.kosmos2_script_path,
+                                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        stdout, stderr = process.communicate()
+                        if process.returncode == 0:
+                            logger.info(stdout.decode('utf-8'))
+                        else:
+                            logger.error(stderr.decode('utf-8'))
+                            raise Exception
                             
                 if settings.use_original_tags or settings.tag_using_wd14 or settings.enable_caption:
                     with jobContext(job_name="merge", file=file):
