@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Image Gallery</title>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        {% for file in files %}
+            <div class="col-md-4">
+                <div class="card {% if file in exclude_list %} bg-danger {% endif %} mb-4 shadow-sm" id="card{{ loop.index0 }}">
+                    <img src="{{ url_for('serve_image', filename=file) }}" class="bd-placeholder-img card-img-top" width="100%" height="225">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#imageModal" data-image="{{ file }}" data-image-id={{ loop.index0 }}>View</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleExclude('{{ file }}', {{ loop.index0 }})">Exclude</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <nav>
+        <ul class="pagination">
+            {% for i in range(1, total_pages+1) %}
+                {% if i == page %}
+                    <li class="page-item active"><a class="page-link" href="{{ url_for('index', page=i) }}">{{ i }}</a></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('index', page=i) }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </nav>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Image</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <img id="modalImage" src="" class="img-fluid">
+                <p id="modalCaption"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+
+<script>
+    $('#imageModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var image = button.data('image');
+        var image_id = button.data('image-id');
+        var modal = $(this);
+        modal.data("index", image_id);
+        modal.find('.modal-body img').attr('src', "{{ url_for('serve_image', filename='') }}" + image);
+        $.get('/caption/' + image, function(data) {
+            modal.find('.modal-body p').text(data.caption);
+        });
+    });
+
+    function toggleExclude(filename, index) {
+        $.post('/exclude/' + filename, function() {
+            var card = $("#card" + index);
+            if (card.hasClass("bg-danger")) {
+                card.removeClass("bg-danger");
+            } else {
+                card.addClass("bg-danger");
+            }
+        });
+    }
+    
+    var currentIndex = 0;
+    var files = {{ files|tojson|safe }};
+    
+    $(document).keydown(function(e) {
+        e.preventDefault(); // prevent the default action (scroll / move caret)
+        currentIndex = $("#imageModal").data("index");
+        switch (e.which) {
+            case 37: // left arrow
+                currentIndex = (currentIndex > 0) ? currentIndex - 1 : files.length - 1;
+                $("#imageModal").data("index", currentIndex);
+                showImage(files[currentIndex]);
+                break;
+    
+            case 39: // right arrow
+                currentIndex = (currentIndex < files.length - 1) ? currentIndex + 1 : 0;
+                $("#imageModal").data("index", currentIndex);
+                showImage(files[currentIndex]);
+                break;
+    
+            case 32: // space
+                toggleExclude(files[currentIndex],currentIndex);
+                break;
+    
+            default: return; // exit this handler for other keys
+        }
+        
+    });
+    function showImage(filename) {
+        $('#modalImage').attr('src', "{{ url_for('serve_image', filename='') }}" + filename);
+        $.get('/caption/' + filename, function(data) {
+            $('#modalCaption').text(data.caption);
+        });
+        $('#imageModal').modal('show');
+    }
+
+</script>
+</body>
+</html>
