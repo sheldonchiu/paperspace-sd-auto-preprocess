@@ -34,6 +34,7 @@ options = Options()
 # if(headless):
 #     options.add_argument('--headless')
 # os_type="linux-aarch64"
+
 driver = webdriver.Firefox(
     executable_path=GeckoDriverManager().install(), options=options)
 driver.set_window_size(1920, 1080)

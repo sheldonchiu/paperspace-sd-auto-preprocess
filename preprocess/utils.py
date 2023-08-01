@@ -159,7 +159,8 @@ def prepare_clean_parser(in_json: str,out_json: str) -> argparse.ArgumentParser:
 def prepare_bucket_parser(train_data_dir: str, in_json: str, out_json: str,
                           model_name_or_path: str, resolution: str,
                           debug_dir: str=None, mixed_precision:str=None,
-                          batch_size: int=None, flip_aug: bool=False) -> argparse.ArgumentParser:
+                          batch_size: int=None, flip_aug: bool=False,
+                          bucket_reso_steps: int=None) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
     parser.add_argument("in_json", type=str, help="metadata file to input / 読み込むメタデータファイル")
@@ -226,6 +227,8 @@ def prepare_bucket_parser(train_data_dir: str, in_json: str, out_json: str,
         s += ['--batch_size', str(batch_size)]
     if mixed_precision:
         s += ['--mixed_precision', mixed_precision]
+    if bucket_reso_steps:
+        s += ['--bucket_reso_steps', str(bucket_reso_steps)]
     args = parser.parse_args(s)
 
     return args

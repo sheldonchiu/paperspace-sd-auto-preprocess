@@ -144,7 +144,8 @@ def main():
                                                         resolution=settings.bucketing_resolution,
                                                         mixed_precision=settings.bucketing_mixed_precision,
                                                         batch_size=settings.bucketing_batch_szie,
-                                                        flip_aug=settings.bucketing_flip_aug
+                                                        flip_aug=settings.bucketing_flip_aug,
+                                                        bucket_reso_steps=settings.bucketing_reso_steps
                                                         )
                     task = context.Process(target=prepare_buckets_latents.main, args=(bucket_args,))
                     task.start()

@@ -37,6 +37,7 @@ bucketing_resolution=os.environ.get('BUCKETING_RESOLUTION', '1024,1024')
 bucketing_mixed_precision = os.environ.get('BUCKETING_MIXED_PRECISION', 'fp16')
 bucketing_batch_szie = int(os.environ.get('BUCKETING_BATCH_SIZE', 2))
 bucketing_flip_aug = bool_t(os.environ.get('BUCKETING_FLIP_AUG', '0'))
+bucketing_reso_steps = int(os.environ.get('BUCKETING_RESOLUTION_STEPS', '64'))
 
 pigz_num_workers = int(os.environ.get('PIGZ_NUM_WORKERS', 8))
 prefetch_num_file = int(os.environ.get('PREFETCH_NUM_FILE', 1))
@@ -48,7 +49,7 @@ filter_waifu_thresh = float(os.environ.get('FILTER_WAIFU_THRESH', 0.6))
 
 main_loop_interval = int(os.environ.get('MAIN_LOOP_INTERVAL', 60*5))
 
-vae_model_url = os.environ.get("VAE_MODEL_URL", "https://huggingface.co/sheldonxxxx/mecha-vae/resolve/main/mecha_v2_e3-pruned.ckpt")
+vae_model_url = os.environ.get("VAE_MODEL_URL", "https://huggingface.co/stabilityai/sdxl-vae/resolve/main/sdxl_vae.safetensors")
 vae_model_hub = os.environ.get("VAE_MODEL_HUB",None)
 
 s3_endpoint_url = os.environ.get('S3_HOST_URL')
