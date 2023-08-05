@@ -27,6 +27,7 @@ pip install --upgrade -r requirements.txt
 pip install realesrgan minio python-logging-discord-handler datasets
 pip install xformers==0.0.20 protobuf==3.20.3
 pip install --upgrade bitsandbytes
+pip install prodigyopt lion-pytorch lycoris_lora
 
 # mkdir -p /tmp/stable-diffusion/
 
