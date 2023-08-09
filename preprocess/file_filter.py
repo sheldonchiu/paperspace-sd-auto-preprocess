@@ -3,7 +3,9 @@ import os
 from os import path as osp
 import re
 import shutil
+from PIL import Image
 from glob import glob
+from typing import List
 from tqdm.auto import tqdm
 from itertools import chain
 import argparse
@@ -28,32 +30,6 @@ count = 0
 
 
 # %%
-def rearrange_tags(tag_list, important_tags=["robot", "mecha"]):
-    """
-    Rearranges the tags in the given tag list based on a list of important tags.
-
-    Args:
-        tag_list (list): The list of tags to be rearranged.
-        important_tags (list): The list of important tags. Defaults to ["robot", "mecha"].
-
-    Returns:
-        list: The rearranged list of tags.
-    """
-
-    # Get the tags that match the important tags
-    important_tags_matched = [
-        tag for tag in tag_list if any(imp_tag in tag for imp_tag in important_tags)
-    ]
-
-    # Get the tags that do not match the important tags
-    non_important_tags = [tag for tag in tag_list if tag not in important_tags_matched]
-
-    # Rearrange the tags by appending the important tags first
-    rearranged_tags = important_tags_matched + non_important_tags
-
-    return rearranged_tags
-
-
 def imgFilter(words):
     """
     Filter the given list of words based on search and exclude conditions.
@@ -81,11 +57,7 @@ def imgFilter(words):
         if exclude_words:
             pattern = "|".join([r"{}\b".format(word) for word in exclude_words])
             # Check if any of the exclude words are in the list, or if the exclude list is empty
-            has_exclude_words = (
-                any(re.search(pattern, word) for word in words)
-                if exclude_words
-                else True
-            )
+            has_exclude_words = any(re.search(pattern, word) for word in words)
 
         # If the content meets the search condition, set include to True
         if has_search_words and not has_exclude_words:
@@ -94,6 +66,8 @@ def imgFilter(words):
             include = False
         elif has_search_words is None and has_exclude_words:
             include = False
+        # does not check has_search_words is none and has_exclude_words
+        # this is to make (None, ["sensitive", "explicit"]) work
 
     # If none of the search conditions are met, return False
     return include
@@ -119,15 +93,32 @@ def add_custom_tag(tag_list: List[str], custom_tags: str) -> List[str]:
     return updated_tag_list
 
 
+def filter_images_by_resolution(image_path: str, min_resolution: int):
+    """
+    Function to filter images based on their resolution.
+
+    Args:
+        image_path (str): The path of the image file.
+        min_resolution (int): The minimum resolution required for the image.
+
+    Returns:
+        bool: True if the image resolution is smaller than the minimum resolution, False otherwise.
+    """
+    with Image.open(image_path) as img:
+        resolution = img.size
+        if resolution[0] < min_resolution or resolution[1] < min_resolution:
+            return True
+    return False
+
+
 # %%
 def main(
     src_path: str,
     dst_path: str,
     tag_extension: str,
     caption_extension: str,
-    filter_using_cafe_aesthetic:bool =False,
-    debug_dir:str =None,
-    config:str =None,
+    debug_dir: str = None,
+    config: str = None,
 ):
     # Load config if provided
     if config:
@@ -141,22 +132,31 @@ def main(
     os.makedirs(dst_path, exist_ok=True)
 
     # Calculate aesthetic scores if filtering using cafe aesthetic
-    if filter_using_cafe_aesthetic:
+    if settings.filter_using_cafe_aesthetic:
         from cafe_filter import Aesthetic
+
         scorer = Aesthetic(batch_size=settings.cafe_batch_size, aesthetic=True)
 
     # Find all image files in the source path
     imgList = list(
-        chain(*[glob(os.path.join(src_path, f"*.{f}")) for f in image_format])
+        chain(*[glob(osp.join(src_path, f"*.{f}")) for f in image_format])
     )
     logger.info(f"find {len(imgList)} image file")
+
+    imgList = [
+        image
+        for image in imgList
+        if not filter_images_by_resolution(image, settings.filter_min_resolution)
+    ]
+    logger.info(f"{len(imgList)} image file met min resolution")
+    
 
     # Initialize output lists
     output = []
     debug_output = []
 
     # Calculate aesthetic scores if filtering using cafe aesthetic
-    if filter_using_cafe_aesthetic:
+    if settings.filter_using_cafe_aesthetic:
         logger.info("Calculating aesthetics...")
         dataset = load_dataset("imagefolder", data_files=imgList)
         scores = scorer.calculate_aesthetic_score(dataset["train"])
@@ -172,9 +172,9 @@ def main(
 
             # Calculate score based on cafe aesthetics
             score = (
-                100
-                if filter_using_cafe_aesthetic
-                else int(scores[idx]["aesthetic"] * 100)
+                int(scores[idx]["aesthetic"] * 100)
+                if settings.filter_using_cafe_aesthetic
+                else 100
             )
 
             with open(tagFile, "r") as f:
@@ -213,14 +213,13 @@ def main(
         if hasattr(settings, "custom_tags") and settings.custom_tags is not None:
             tag_list = add_custom_tag(tag_list, settings.custom_tags)
         tag_list = list(set(tag_list))
-        tag_list = rearrange_tags(tag_list)
         with open(item["tag_src"], "w") as f:
             f.write(",".join(tag_list))
 
         imgFile = item["img_src"]
         img_dst = osp.join(dst_path, osp.basename(imgFile))
         os.symlink(imgFile, img_dst)
-        
+
         tag_dst = osp.join(dst_path, f"{item['id']}{tag_extension}")
         if settings.use_original_tags:
             tag_ori_dst = osp.join(dst_path, f"{item['id']}.txt")

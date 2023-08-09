@@ -136,7 +136,6 @@ def main():
                                 filter_dst,
                                 tag_extension,
                                 caption_extension,
-                                settings.filter_using_cafe_aesthetic,
                                 debug_dir,
                                 config_file_path,
                             ),
@@ -215,6 +214,7 @@ def main():
                         batch_size=settings.bucketing_batch_szie,
                         flip_aug=settings.bucketing_flip_aug,
                         bucket_reso_steps=settings.bucketing_reso_steps,
+                        bucketing_enable_upscale=settings.bucketing_enable_upscale,
                     )
                     task = context.Process(
                         target=prepare_buckets_latents.main, args=(bucket_args,)
