@@ -1,10 +1,6 @@
 import os
 import logging
-from minio import Minio
 from typing import Any, Callable, List, Union
-from gradient import NotebooksClient
-from gradient import MachineTypesClient
-from gradient import ProjectsClient
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +15,8 @@ class MinioClient:
             secret_key (str): The secret key for authentication.
             secure (bool, optional): Whether to use a secure connection (HTTPS) or not. Defaults to True.
         """
+        from minio import Minio
+        
         self.endpoint = endpoint
         self.access_key = access_key
         self.secret_key = secret_key
@@ -110,6 +108,10 @@ class PaperspaceClient:
         Args:
             api_key: The API key to authenticate requests.
         """
+        from gradient import NotebooksClient
+        from gradient import MachineTypesClient
+        from gradient import ProjectsClient
+    
         self.api_key = api_key
         self.notebooks_client = NotebooksClient(api_key)
         self.machineTypes_client = MachineTypesClient(api_key)
@@ -155,35 +157,3 @@ class PaperspaceClient:
         """
         notebooks = [n for n in self.notebooks_client.list(tags=[]) if n.project_handle==project_id]
         return notebooks
-
-def input_or_default(name: str, default: Any, type_func: Callable[[str], Any], args: Any) -> None:
-    """
-    Prompt the user to enter a value for a specific name.
-    If the user input is empty, return the default value.
-    If the user input is invalid, prompt the user again until a valid input is provided.
-    Set the value of the input to the corresponding attribute in args.
-
-    Args:
-        name (str): The name of the value being prompted for.
-        default (Any): The default value to return if the user input is empty.
-        type_func (Callable[[str], Any]): The function to convert the user input to the desired type.
-        args (Any): The object containing the attributes to be set.
-
-    Returns:
-        None
-    """
-    if not args.interactive:
-        return default
-
-    while True:
-        user_input = input(f"Enter a value for '{name}':[default:{default}]\n")
-
-        if user_input == "":
-            return
-
-        try:
-            value = type_func(user_input)
-            setattr(args, name, value)
-            return
-        except ValueError:
-            print(f"Invalid input, please enter a value of type {type_func.__name__}.")
