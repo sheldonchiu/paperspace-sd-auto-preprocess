@@ -1,6 +1,6 @@
 #%%
+import argparse
 import re
-import sys
 import os
 from os import path as osp
 import argparse
@@ -8,34 +8,22 @@ import json
 from glob import glob
 from tqdm import tqdm
 from itertools import chain
-from minio import Minio
+from utils import MinioClient, input_or_default
 
 image_format = ["jpeg", "jpg", "png", "webp"]
-
-def get_first_index_to_use(s3, bucket_name:str):
-    response = [
-        int(o.object_name.replace(".tar.gz", ""))
-        for o in s3.list_objects(bucket_name)
-        if "result" not in o.object_name
-    ]
-    response.sort()
-    if len(response) == 0:
-        return 0
-    return response[-1] + 1
-
 # %%
 def main(args):
     files_to_skip = []; hashList = []; output = []
-    s3 = Minio(
-        "192.168.50.210:9000",
-        access_key="Ovzmp8bmq50RTsJg",
-        secret_key="rFteTYVeiNedCOTM6pG9nFtRpqu6izld",
+    s3_client = MinioClient(
+        os.environ["S3_HOST_URL"],
+        os.environ["S3_ACCESS_KEY"],
+        os.environ["S3_SECRET_KEY"],
         secure=False,
     )
     config = {"use_original_tags": args.source == "booru", "wd14_thresh": args.wd14_thresh,
             "custom_tags": args.custom_tags}
     os.makedirs(args.output_path, exist_ok=True)
-    # if source == "pinterest":
+    # if args.source == "pinterest":
     #     history_dir = "pinterest_history"
     #     history_files = glob(osp.join(history_dir, "*.json"))
     #     if len(history_files):
@@ -55,7 +43,7 @@ def main(args):
     
     assert len(imgList) > 0, "No image file found"
 
-    zip_start_index = get_first_index_to_use(s3, args.bucket_name)
+    zip_start_index = s3_client.get_first_index_to_use(args.bucket_name)
     print(f"Will start with index {zip_start_index}")
 
     if args.source == "booru":
@@ -139,15 +127,9 @@ def main(args):
                 f"cd {args.output_path} && tar chf - {folder_idx} | pigz -p 12 > {folder_idx}.tar.gz"
             )
             print(f"start to upload zip {folder_idx}.tar.gz")
-            s3.fput_object(
-                args.bucket_name,
-                f"{folder_idx}.tar.gz",
-                osp.join(args.output_path, f"{folder_idx}.tar.gz"),
-            )
+            s3_client.upload_file(args.bucket_name, f"{folder_idx}.tar.gz", osp.join(args.output_path, f"{folder_idx}.tar.gz"))
     
 #%%
-import argparse
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Prepare image for training')
     parser.add_argument('--image_path', type=str, help='Path to the data')
@@ -159,21 +141,7 @@ if __name__ == "__main__":
     parser.add_argument('--custom_tags', type=str, default="", help='Custom tags for the data')
     parser.add_argument('--bucket_name', type=str, default='queue-1', help='Name of the bucket')
     parser.add_argument('--interactive', action='store_true', help='interactive mode')
-
     args = parser.parse_args()
-    def input_or_default(name, default, type_func, args):
-        if not args.interactive:
-            return default
-        while True:
-            user_input = input(f"Enter a value for '{name}':[default:{default}]\n")
-            if user_input == "":
-                return
-            try:
-                value = type_func(user_input)
-                setattr(args, name, value)
-                return
-            except ValueError:
-                print(f"Invalid input, please enter a value of type {type_func.__name__}.")
                 
     input_or_default("bucket_name", args.bucket_name, str, args)
     input_or_default("image_path", args.image_path, str, args)
@@ -188,4 +156,5 @@ if __name__ == "__main__":
     assert args.output_path is not None, "output_path is required"
     
     main(args)
+
 
