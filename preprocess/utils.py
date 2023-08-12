@@ -11,6 +11,7 @@ from tqdm.auto import tqdm
 import time
 from pathlib import Path
 import json
+import inspect
 
 logger = logging.getLogger(__name__)
 try:
@@ -122,13 +123,20 @@ def prepare_wd_parser(
     args = parser.parse_args(
         [
             train_data_dir,
-            "--thresh", str(thresh),
-            "--general_threshold", str(general_thresh) if general_thresh else str(thresh),
-            "--character_threshold", str(character_thresh) if character_thresh else str(thresh),
-            "--batch_size", str(batch_size),
-            "--max_data_loader_n_workers", "0",
-            "--caption_extension", caption_extention,
-            "--model_dir", "/tmp/wd14_tagger_model",
+            "--thresh",
+            str(thresh),
+            "--general_threshold",
+            str(general_thresh) if general_thresh else str(thresh),
+            "--character_threshold",
+            str(character_thresh) if character_thresh else str(thresh),
+            "--batch_size",
+            str(batch_size),
+            "--max_data_loader_n_workers",
+            "0",
+            "--caption_extension",
+            caption_extention,
+            "--model_dir",
+            "/tmp/wd14_tagger_model",
             "--remove_underscore",
         ]
     )
@@ -292,12 +300,28 @@ def prepare_bucket_parser(
     bucketing_enable_upscale: bool = False,
 ) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ")
-    parser.add_argument("in_json", type=str, help="metadata file to input / 読み込むメタデータファイル")
-    parser.add_argument("out_json", type=str, help="metadata file to output / メタデータファイル書き出し先")
-    parser.add_argument("model_name_or_path", type=str, help="model name or path to encode latents / latentを取得するためのモデル")
-    parser.add_argument("--v2", action="store_true", help="not used (for backward compatibility) / 使用されません（互換性のため残してあります）")
-    parser.add_argument("--batch_size", type=int, default=1, help="batch size in inference / 推論時のバッチサイズ")
+    parser.add_argument(
+        "train_data_dir", type=str, help="directory for train images / 学習画像データのディレクトリ"
+    )
+    parser.add_argument(
+        "in_json", type=str, help="metadata file to input / 読み込むメタデータファイル"
+    )
+    parser.add_argument(
+        "out_json", type=str, help="metadata file to output / メタデータファイル書き出し先"
+    )
+    parser.add_argument(
+        "model_name_or_path",
+        type=str,
+        help="model name or path to encode latents / latentを取得するためのモデル",
+    )
+    parser.add_argument(
+        "--v2",
+        action="store_true",
+        help="not used (for backward compatibility) / 使用されません（互換性のため残してあります）",
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=1, help="batch size in inference / 推論時のバッチサイズ"
+    )
     parser.add_argument(
         "--max_data_loader_n_workers",
         type=int,
@@ -310,8 +334,18 @@ def prepare_bucket_parser(
         default="512,512",
         help="max resolution in fine tuning (width,height) / fine tuning時の最大画像サイズ 「幅,高さ」（使用メモリ量に関係します）",
     )
-    parser.add_argument("--min_bucket_reso", type=int, default=256, help="minimum resolution for buckets / bucketの最小解像度")
-    parser.add_argument("--max_bucket_reso", type=int, default=1024, help="maximum resolution for buckets / bucketの最小解像度")
+    parser.add_argument(
+        "--min_bucket_reso",
+        type=int,
+        default=256,
+        help="minimum resolution for buckets / bucketの最小解像度",
+    )
+    parser.add_argument(
+        "--max_bucket_reso",
+        type=int,
+        default=1024,
+        help="maximum resolution for buckets / bucketの最小解像度",
+    )
     parser.add_argument(
         "--bucket_reso_steps",
         type=int,
@@ -319,10 +353,16 @@ def prepare_bucket_parser(
         help="steps of resolution for buckets, divisible by 8 is recommended / bucketの解像度の単位、8で割り切れる値を推奨します",
     )
     parser.add_argument(
-        "--bucket_no_upscale", action="store_true", help="make bucket for each image without upscaling / 画像を拡大せずbucketを作成します"
+        "--bucket_no_upscale",
+        action="store_true",
+        help="make bucket for each image without upscaling / 画像を拡大せずbucketを作成します",
     )
     parser.add_argument(
-        "--mixed_precision", type=str, default="no", choices=["no", "fp16", "bf16"], help="use mixed precision / 混合精度を使う場合、その精度"
+        "--mixed_precision",
+        type=str,
+        default="no",
+        choices=["no", "fp16", "bf16"],
+        help="use mixed precision / 混合精度を使う場合、その精度",
     )
     parser.add_argument(
         "--full_path",
@@ -330,7 +370,9 @@ def prepare_bucket_parser(
         help="use full path as image-key in metadata (supports multiple directories) / メタデータで画像キーをフルパスにする（複数の学習画像ディレクトリに対応）",
     )
     parser.add_argument(
-        "--flip_aug", action="store_true", help="flip augmentation, save latents for flipped images / 左右反転した画像もlatentを取得、保存する"
+        "--flip_aug",
+        action="store_true",
+        help="flip augmentation, save latents for flipped images / 左右反転した画像もlatentを取得、保存する",
     )
     parser.add_argument(
         "--skip_existing",
@@ -342,32 +384,45 @@ def prepare_bucket_parser(
         action="store_true",
         help="recursively look for training tags in all child folders of train_data_dir / train_data_dirのすべての子フォルダにある学習タグを再帰的に探す",
     )
-    parser.add_argument("--upscale", action="store_true",
-                        help="upscale before resize")
-    parser.add_argument("--upscale_enable_reso", type=int, default=1000*1000,
-                        help="Images with resolution(w*h) below this will upscale before resize, if upsacle is enabled")
+    parser.add_argument("--upscale", action="store_true", help="upscale before resize")
     parser.add_argument(
-        '--upscale_model_name',
+        "--upscale_enable_reso",
+        type=int,
+        default=1000 * 1000,
+        help="Images with resolution(w*h) below this will upscale before resize, if upsacle is enabled",
+    )
+    parser.add_argument(
+        "--upscale_model_name",
         type=str,
-        default='RealESRGAN_x4plus_anime_6B',
-        help=('Model names: RealESRGAN_x4plus | RealESRNet_x4plus | RealESRGAN_x4plus_anime_6B | RealESRGAN_x2plus | '
-                'realesr-animevideov3 | realesr-general-x4v3'))
-    parser.add_argument('--upscale_outscale', type=int, default=2,
-                        help='')
+        default="RealESRGAN_x4plus_anime_6B",
+        help=(
+            "Model names: RealESRGAN_x4plus | RealESRNet_x4plus | RealESRGAN_x4plus_anime_6B | RealESRGAN_x2plus | "
+            "realesr-animevideov3 | realesr-general-x4v3"
+        ),
+    )
+    parser.add_argument("--upscale_outscale", type=int, default=2, help="")
     parser.add_argument(
-        '--upscale_denoise_strength',
+        "--upscale_denoise_strength",
         type=float,
         default=0.5,
-        help=('Denoise strength. 0 for weak denoise (keep noise), 1 for strong denoise ability. '
-                'Only used for the realesr-general-x4v3 model'))
+        help=(
+            "Denoise strength. 0 for weak denoise (keep noise), 1 for strong denoise ability. "
+            "Only used for the realesr-general-x4v3 model"
+        ),
+    )
     parser.add_argument(
-        '--upscale_model_dir', type=str, default='upscale', help='[Option] Model path.')
-    parser.add_argument('--upscale_tile', type=int, default=512,
-                        help='Tile size, 0 for no tile during testing')
-    parser.add_argument('--upscale_tile_pad', type=int,
-                        default=10, help='Tile padding')
-    parser.add_argument('--upscale_pre_pad', type=int,
-                        default=0, help='Pre padding size at each border')
+        "--upscale_model_dir", type=str, default="upscale", help="[Option] Model path."
+    )
+    parser.add_argument(
+        "--upscale_tile",
+        type=int,
+        default=512,
+        help="Tile size, 0 for no tile during testing",
+    )
+    parser.add_argument("--upscale_tile_pad", type=int, default=10, help="Tile padding")
+    parser.add_argument(
+        "--upscale_pre_pad", type=int, default=0, help="Pre padding size at each border"
+    )
     s = [
         train_data_dir,
         in_json,
@@ -389,7 +444,7 @@ def prepare_bucket_parser(
         s += ["--bucket_reso_steps", str(bucket_reso_steps)]
     if bucketing_enable_upscale:
         s += ["--upscale"]
-    
+
     args = parser.parse_args(s)
 
     return args
@@ -643,6 +698,15 @@ def remove_images_from_folder(folder):
         os.remove(image)
 
 
-# config = {"use_original_tags": "0"}
-# with open("config.json", 'w') as f:
-#     json.dump(config, f)
+def save_setting_to_file(file_path):
+    variables = {
+        name: value
+        for name, value in vars(settings).items()
+        if not name.startswith("__")
+        and not inspect.ismodule(value)
+        and not inspect.isfunction(value)
+        and not inspect.isclass(value)
+    }
+    with open(file_path, 'w') as file:
+        json.dump(variables, file, indent=4)
+

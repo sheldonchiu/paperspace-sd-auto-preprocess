@@ -62,7 +62,7 @@ def main(output_path, bucket_name, start_idx, end_idx, download, merge, npz_only
         
         for file in tqdm(files):          
             try:
-                if 'json' not in osp.basename(file):
+                if osp.isfile(file) and 'json' not in osp.basename(file):
                     os.symlink(file, osp.join(target_path, osp.basename(file)))
             except FileExistsError:
                 print(f"{osp.basename(file)} alreay exist")

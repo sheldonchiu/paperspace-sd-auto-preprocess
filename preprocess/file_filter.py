@@ -13,7 +13,7 @@ import settings
 import json
 from datasets import load_dataset
 import logging
-from utils import load_config_from_file
+from utils import load_config_from_file, save_setting_to_file
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +130,9 @@ def main(
 
     # Create destination directory
     os.makedirs(dst_path, exist_ok=True)
+    
+    # Saving current batch setting to file
+    save_setting_to_file(osp.join(dst_path, "settings.json"))
 
     # Calculate aesthetic scores if filtering using cafe aesthetic
     if settings.filter_using_cafe_aesthetic:
